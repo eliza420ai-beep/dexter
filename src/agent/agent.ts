@@ -62,7 +62,7 @@ export class Agent {
     const [voiceContent, soulHLContent, portfolioContent, thetaPolicySummary] = await Promise.all([
       toolProfile === 'suggest' ? Promise.resolve(null) : loadVoiceDocument(),
       loadSoulHLDocument(),
-      loadPortfolioDocument(),
+      toolProfile === 'suggest' ? Promise.resolve(null) : loadPortfolioDocument(),
       toolProfile === 'suggest' ? Promise.resolve(null) : loadThetaPolicySummary(),
     ]);
     let memoryContextInfo: { filesLoaded: string[]; tokenEstimate: number } | undefined;

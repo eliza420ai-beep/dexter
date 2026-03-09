@@ -107,11 +107,8 @@ export type ToolProfile = 'full' | 'suggest';
 
 const SUGGEST_TOOLS = new Set<string>([
   'financial_search',
-  'financial_metrics',
   'portfolio',
   'hyperliquid_prices',
-  'web_search',
-  'save_report',
 ]);
 
 /**
@@ -348,6 +345,14 @@ export function getTools(model: string, profile: ToolProfile = 'full'): Structur
  * @returns Formatted string with all tool descriptions
  */
 export function buildToolDescriptions(model: string, profile: ToolProfile = 'full'): string {
+  if (profile === 'suggest') {
+    return [
+      '### financial_search\n\nUse once to fetch the financial data needed to build sleeves.',
+      '### portfolio\n\nUse to save the final tastytrade and/or hyperliquid sleeves.',
+      '### hyperliquid_prices\n\nUse only when you need Hyperliquid-specific pricing context for HL names.',
+    ].join('\n\n');
+  }
+
   return getToolRegistry(model, profile)
     .map((t) => `### ${t.name}\n\n${t.description}`)
     .join('\n\n');

@@ -20,6 +20,10 @@ export interface RunQueryOptions {
   maxIterations?: AgentConfig['maxIterations'];
 }
 
+export interface RunCustomQueryResult extends RunQueryResult {
+  tokenUsage?: DoneEvent['tokenUsage'];
+}
+
 export class AgentRunnerController {
   private historyValue: HistoryItem[] = [];
   private workingStateValue: WorkingState = { status: 'idle' };
@@ -135,6 +139,62 @@ export class AgentRunnerController {
         return { answer: finalAnswer };
       }
       return undefined;
+    } catch (error) {
+      if (error instanceof Error && error.name === 'AbortError') {
+        this.markLastProcessing('interrupted');
+        this.workingStateValue = { status: 'idle' };
+        this.emitChange();
+        return undefined;
+      }
+      const message = error instanceof Error ? error.message : String(error);
+      this.errorValue = message;
+      this.markLastProcessing('error');
+      this.workingStateValue = { status: 'idle' };
+      this.emitChange();
+      return undefined;
+    } finally {
+      this.abortController = null;
+    }
+  }
+
+  async runCustomQuery(
+    query: string,
+    task: (signal: AbortSignal) => Promise<RunCustomQueryResult | undefined>,
+  ): Promise<RunQueryResult | undefined> {
+    this.abortController = new AbortController();
+    const startTime = Date.now();
+    const item: HistoryItem = {
+      id: String(startTime),
+      query,
+      events: [],
+      answer: '',
+      status: 'processing',
+      startTime,
+    };
+    this.historyValue = [...this.historyValue, item];
+    this.inMemoryChatHistory.saveUserQuery(query);
+    this.errorValue = null;
+    this.workingStateValue = { status: 'thinking' };
+    this.emitChange();
+
+    try {
+      const result = await task(this.abortController.signal);
+      if (!result) {
+        this.markLastProcessing('error');
+        this.workingStateValue = { status: 'idle' };
+        this.emitChange();
+        return undefined;
+      }
+
+      await this.handleEvent({
+        type: 'done',
+        answer: result.answer,
+        toolCalls: [],
+        iterations: 1,
+        totalTime: Date.now() - startTime,
+        tokenUsage: result.tokenUsage,
+      });
+      return { answer: result.answer };
     } catch (error) {
       if (error instanceof Error && error.name === 'AbortError') {
         this.markLastProcessing('interrupted');

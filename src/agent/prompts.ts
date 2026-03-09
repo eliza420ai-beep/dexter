@@ -178,6 +178,77 @@ or edit_file for memory files; always use memory_update.
 Before editing or deleting, use memory_get to verify the exact text to match.${contextSection}`;
 }
 
+function compactMarkdown(content?: string | null, maxChars = 1800): string {
+  if (!content) return '';
+
+  const importantLines = content
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && (line.startsWith('#') || line.startsWith('-') || line.startsWith('*')))
+    .join('\n');
+
+  const source = importantLines || content.replace(/\s+/g, ' ').trim();
+  return source.length <= maxChars ? source : `${source.slice(0, maxChars).trim()}...`;
+}
+
+function buildSuggestSystemPrompt(
+  soulContent?: string | null,
+  soulHLContent?: string | null,
+  channel?: string,
+  groupContext?: GroupContext,
+): string {
+  const channelProfile = getChannelProfile(channel);
+  const behaviorBullets = channelProfile.behavior.map((b) => `- ${b}`).join('\n');
+  const formatBullets = channelProfile.responseFormat.map((b) => `- ${b}`).join('\n');
+  const compactSoul = compactMarkdown(soulContent, 2200);
+  const compactSoulHl = compactMarkdown(soulHLContent, 1400);
+
+  return `You are Dexter, a focused portfolio builder.
+
+Current date: ${getCurrentDate()}
+
+${channelProfile.preamble}
+
+## Available Tools
+
+### financial_search
+Use once to gather the financial context needed to construct sleeves.
+
+### portfolio
+Use this to save final sleeves. Saving is mandatory.
+
+### hyperliquid_prices
+Use only when Hyperliquid-specific pricing context is needed.
+
+## Suggest Mode Contract
+
+- This mode is for portfolio suggestions only
+- Do NOT run AIHF
+- Do NOT write essays or reports
+- Keep tool usage minimal
+- When sufficient data is gathered, save the requested sleeve(s) via portfolio tool and stop
+
+## Portfolio Rules
+
+- Tastytrade sleeve: only non-Hyperliquid thesis names
+- Hyperliquid sleeve: only HL/HIP-3 equities, commodities, indices
+- Exclude BTC, SOL, HYPE, ETH, SUI, NEAR from the HL sleeve because they belong to the core crypto portfolio
+- Keep zero overlap between sleeves
+- Include target weights and concise rationale
+- Always include "Not in the portfolio — and why"
+- Save before finishing; never ask the user to copy/paste
+
+${compactSoul ? `## Identity Summary\n\n${compactSoul}\n` : ''}
+${compactSoulHl ? `## Hyperliquid Thesis Summary\n\n${compactSoulHl}\n` : ''}
+## Behavior
+
+${behaviorBullets}
+
+## Response Format
+
+${formatBullets}${groupContext ? '\n\n' + buildGroupSection(groupContext) : ''}`;
+}
+
 export async function loadMemoryContext(): Promise<string | null> {
   try {
     const manager = await MemoryManager.get();
@@ -300,12 +371,16 @@ export function buildSystemPrompt(
   memoryContext?: string | null,
   toolProfile: ToolProfile = 'full',
 ): string {
+  if (toolProfile === 'suggest') {
+    return buildSuggestSystemPrompt(soulContent, soulHLContent, channel, groupContext);
+  }
+
   const toolDescriptions = buildToolDescriptions(model, toolProfile);
   const channelProfile = getChannelProfile(channel);
-  const includeSkillsSection = toolProfile !== 'suggest';
-  const includeAihfPolicy = toolProfile !== 'suggest';
-  const includeSubstackPolicy = toolProfile !== 'suggest';
-  const includeMemorySection = toolProfile !== 'suggest';
+  const includeSkillsSection = true;
+  const includeAihfPolicy = true;
+  const includeSubstackPolicy = true;
+  const includeMemorySection = true;
 
   const behaviorBullets = channelProfile.behavior.map((b) => `- ${b}`).join('\n');
   const formatBullets = channelProfile.responseFormat.map((b) => `- ${b}`).join('\n');

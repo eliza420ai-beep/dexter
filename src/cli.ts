@@ -16,6 +16,7 @@ import {
   InputHistoryController,
   ModelSelectionController,
 } from './controllers/index.js';
+import { runSuggestFastPath, type SuggestMode } from './agent/suggest-fast-path.js';
 import {
   ApiKeyInputComponent,
   ApprovalPromptComponent,
@@ -259,26 +260,8 @@ export async function runCli() {
   };
 
   const QUERY_SHORTCUTS: Record<string, string> = {
-    '/suggest': `Suggest and save TWO portfolios based on your Identity (SOUL.md). Use two portfolios — zero overlap.
-
-1. **Tastytrade sleeve** (portfolio_id=default): Only tickers NOT on Hyperliquid — e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG, ANET (SOUL layers 1–7). Do NOT include TSM or any ticker tradable on HIP-3. 10–20 positions, target weights, layer/tier. Save to .dexter/PORTFOLIO.md with portfolio tool, action=update, portfolio_id=default.
-
-2. **Hyperliquid sleeve** (portfolio_id=hyperliquid): Only HIP-3 onchain equities — stocks (TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL, TSLA, META), commodities (GLD, SLV), indices (SPY, SMH). Do NOT include BTC, SOL, HYPE, ETH, SUI, NEAR (those are in the core crypto portfolio). 10–20 positions, target weights. Save to .dexter/PORTFOLIO-HYPERLIQUID.md with portfolio tool, action=update, portfolio_id=hyperliquid.
-
-Include conviction tiering, regime awareness, and rationale. Call the portfolio tool twice to save both files.
-
-**Also include a "Not in the portfolio — and why" section** for each sleeve: list thesis-universe names that were considered but excluded, with a one-line reason for each (e.g. crowding, valuation, wrong regime, insufficient moat, better expression elsewhere). The trades we don't make are thesis calls too.`,
-    '/suggest-tastytrade': `Suggest and save ONLY the tastytrade sleeve based on Identity (SOUL.md).
-
-Constraints:
-- Tastytrade-only sleeve (portfolio_id=default)
-- Include only non-Hyperliquid tickers (no HIP-3 tradable names)
-- Do NOT include TSM, AAPL, MSFT, AMZN, META, COIN, BTC, SOL, HYPE, ETH, SUI, NEAR
-- 10–20 positions with target weights, conviction tiering, regime-aware rationale
-
-Output requirements:
-- Save to .dexter/PORTFOLIO.md with portfolio tool action=update, portfolio_id=default
-- Include a section: "Not in the portfolio — and why" with considered-but-excluded names and one-line reasons`,
+    '/suggest': `Suggest and save two sleeves only (no AIHF, no essay): tastytrade (portfolio_id=default) and hyperliquid (portfolio_id=hyperliquid). Keep zero overlap, include target weights + concise rationale, and include "Not in the portfolio — and why" for each sleeve. Save both files via portfolio tool.`,
+    '/suggest-tastytrade': `Suggest and save only the tastytrade sleeve (portfolio_id=default). Keep to non-Hyperliquid thesis names, include target weights + concise rationale, and include "Not in the portfolio — and why". Save via portfolio tool.`,
     '/double-check': `Run an AI Hedge Fund second opinion on my current portfolios.
 
 Use aihf_double_check with action=run.
@@ -348,13 +331,7 @@ Output:
 - YTD and since-inception (if performance_history has data): compute and include vs BTC, SPY, GLD
 - Save the report to .dexter/QUARTERLY-REPORT-YYYY-QN.md using the save_report tool (e.g. QUARTERLY-REPORT-2026-Q1.md)
 - Call performance_history record_quarter to append this quarter's returns (period, portfolio, btc, spy, gld as decimals)`,
-    '/suggest-hl': `Suggest a Hyperliquid portfolio focused on HIP-3 onchain equities — NOT crypto assets (BTC, SOL, HYPE, ETH, SUI, NEAR are already in the core portfolio). Use docs/HYPERLIQUID-SYMBOL-MAP.md for the HL→FD ticker mapping. Include:
-- 10–20 positions from HIP-3 onchain stocks (e.g. TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL, TSLA, META, MSFT, AMZN, MU, INTC), commodities (GLD, SLV, USO), or indices (SPY, SMH)
-- Do NOT allocate to BTC, SOL, HYPE, ETH, SUI, NEAR — those belong in the core portfolio
-- Size by thesis conviction, not by volume. Volume matters for execution quality (spreads, slippage) but should not drive allocation weights
-- Target weights and brief rationale
-- Save to .dexter/PORTFOLIO-HYPERLIQUID.md using the portfolio tool with portfolio_id=hyperliquid
-- **"Not in the portfolio — and why"**: list HIP-3-eligible names from the thesis universe that were considered but excluded, with a one-line reason for each. The trades we don't make are thesis calls too.`,
+    '/suggest-hl': `Suggest and save only the Hyperliquid HIP-3 sleeve (portfolio_id=hyperliquid). Exclude core crypto assets (BTC, SOL, HYPE, ETH, SUI, NEAR), include target weights + concise rationale, and include "Not in the portfolio — and why". Save via portfolio tool.`,
     '/hl-report': `Write a quarterly performance report for my Hyperliquid portfolio only. Use .dexter/PORTFOLIO-HYPERLIQUID.md. Map HL symbols to FD tickers per docs/HYPERLIQUID-SYMBOL-MAP.md. Fetch quarter-to-date (or 90-day) prices for each position plus BTC-USD, GLD, SPY. Include:
 - Portfolio return vs BTC, SPY, GLD (and hl_basket if computable)
 - Category attribution: Core, L1, AI infra, tokenization
@@ -460,6 +437,12 @@ Do not place any trades.`,
     '/suggest-tastytrade': 'suggest',
   };
 
+  const SUGGEST_FAST_PATHS: Record<string, SuggestMode> = {
+    '/suggest': 'both',
+    '/suggest-hl': 'hyperliquid',
+    '/suggest-tastytrade': 'default',
+  };
+
   const handleSubmit = async (query: string) => {
     if (query.toLowerCase() === 'exit' || query.toLowerCase() === 'quit') {
       tui.stop();
@@ -488,10 +471,19 @@ Do not place any trades.`,
 
     await inputHistory.saveMessage(expandedQuery);
     inputHistory.resetNavigation();
-    const result = await agentRunner.runQuery(expandedQuery, {
-      toolProfile: shortcutProfile,
-      maxIterations: shortcutMaxIterations,
-    });
+    const fastSuggestMode = SUGGEST_FAST_PATHS[shortcutKey];
+    const result = fastSuggestMode
+      ? await agentRunner.runCustomQuery(expandedQuery, (signal) =>
+          runSuggestFastPath({
+            mode: fastSuggestMode,
+            model: modelSelection.model,
+            signal,
+          }),
+        )
+      : await agentRunner.runQuery(expandedQuery, {
+          toolProfile: shortcutProfile,
+          maxIterations: shortcutMaxIterations,
+        });
     if (result?.answer) {
       await inputHistory.updateAgentResponse(result.answer);
     }
