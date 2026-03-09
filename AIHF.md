@@ -141,6 +141,10 @@ Important:
 - this is a **proxy disagreement check**, not the full BTC decision
 - the final BTC call should also consider `SOUL.md`, concentration, and BTC vs GLD vs SPY regime
 - for the full framework, use `BTC.md`
+- if `IBIT` is unavailable as a ticker/proxy, retry with `BITO`, then `GBTC`
+- if all listed proxies fail for ticker-availability reasons, direct-crypto fallback is `BTC-USD`
+- never use raw `BTC` as the AIHF ticker; it appears mis-mapped
+- if AIHF itself is unreachable, treat the second system as unavailable; switching from `IBIT` to `BTC-USD` will not solve a service outage
 
 ### Why this shape matters
 

@@ -104,11 +104,21 @@ If the short window and quarter-to-date conflict, say so explicitly, for example
 - `mixed, QTD defensive`
 - `mixed, short-term bounce inside defensive quarter`
 
-## Step 3: Run AIHF proxy disagreement check on IBIT
+## Step 3: Run AIHF second-system check
 
-Use `aihf_double_check` as a one-ticker proxy run:
+Use `aihf_double_check` as a one-ticker proxy run.
 
-- ticker: `IBIT`
+Listed-proxy order:
+
+1. `IBIT`
+2. `BITO`
+3. `GBTC`
+
+If all listed proxies are unavailable as tickers/proxies, use direct-crypto fallback:
+
+4. `BTC-USD`
+
+- ticker: `IBIT` first, then `BITO`, then `GBTC`, and only then `BTC-USD`
 - included set only
 - sleeve: `default`
 - `top_n_included=1`
@@ -117,21 +127,33 @@ Use `aihf_double_check` as a one-ticker proxy run:
 Rules:
 
 - do not read `PORTFOLIO.md` for this step
-- keep the run constrained to `IBIT` only
+- keep the run constrained to one ticker only
+- prefer listed BTC proxies for the normal second-system disagreement check
+- use `BTC-USD` for regime/doctrine analysis regardless, even when it is also used as direct AIHF fallback
+- never use raw `BTC` as the AIHF ticker; it appears to be mis-mapped and can return nonsense pricing
 - treat the result as a second-system signal, not doctrine
 
 Extract:
 
 - overall stance: bullish / bearish / mixed / unavailable
+- which ticker was used
+- whether the run was `listed-proxy` or `direct-crypto`
 - the strongest disagreement points
 - whether the disagreement sounds structural, regime-driven, or path/timing-driven
 - saved filename if the tool creates one
 
-If AIHF is unreachable or errors:
+If `IBIT` fails because the ticker/proxy itself is unsupported or unavailable:
+
+- retry once with `BITO`
+- if needed, retry once with `GBTC`
+- if all listed proxies fail for ticker-availability reasons, retry once with `BTC-USD`
+
+If AIHF is unreachable or the service errors:
 
 - set stance to `unavailable`
 - do not relabel that as `mixed`
 - explicitly reduce confidence in the final judgment
+- do not imply that replacing `IBIT` with `BTC-USD` would solve the outage
 
 ## Step 4: Make the decision
 

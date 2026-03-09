@@ -56,6 +56,10 @@ Use **IBIT** (or BITO / GBTC) as a **proxy data source** or ETF execution path.
 - For `/theta-btc-weekly`, IBIT is primarily a strike/probability proxy for BTC options advice.
 - Do **not** treat `IBIT` as the doctrinal center of the BTC thesis.
 - AIHF on `IBIT` is useful because AIHF reasons naturally about listed securities; it gives a machine-readable second opinion on a BTC proxy.
+- Normal AIHF proxy fallback order is: `IBIT` -> `BITO` -> `GBTC`.
+- If all listed proxies are unavailable as tickers, direct-crypto fallback is `BTC-USD`.
+- Never use raw `BTC` as the AIHF ticker; it appears mis-mapped and can return nonsense pricing.
+- `BTC-USD` remains the regime/doctrine ticker regardless of which AIHF ticker was used.
 
 ### Hyperliquid
 
@@ -84,7 +88,8 @@ AIHF is **not** sufficient on its own to answer:
 Best framing:
 
 - **Dexter** = doctrine, regime, sizing judgment
-- **AIHF on IBIT** = disagreement signal
+- **AIHF on IBIT / BITO / GBTC** = preferred listed-proxy disagreement signal
+- **AIHF on BTC-USD** = direct-crypto fallback when listed proxies fail as tickers
 - **BTC temp check** = combined decision layer
 
 ## The BTC temp-check workflow
