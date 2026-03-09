@@ -4,7 +4,6 @@ import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getChannelProfile } from './channels.js';
-import { MemoryManager } from '../memory/index.js';
 import { dexterPath } from '../utils/paths.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -150,32 +149,27 @@ ${skillList}
 - Do not invoke a skill that has already been invoked for the current query`;
 }
 
-function buildMemorySection(memoryContext?: string): string {
-  const contextSection = memoryContext?.trim()
-    ? `
-## Recent Memory Context
-
-${memoryContext.trim()}`
+function buildMemorySection(memoryFiles: string[]): string {
+  const fileListSection = memoryFiles.length > 0
+    ? `\nMemory files on disk: ${memoryFiles.join(', ')}`
     : '';
 
   return `## Memory
 
-You have persistent memory stored as Markdown files in .dexter/memory/.
+You have persistent memory stored as Markdown files in .dexter/memory/.${fileListSection}
 
 ### Recalling memories
-Before answering questions about prior work, decisions, dates, people, preferences, or
-facts the user has shared: use memory_search to find relevant notes, then memory_get to
-read specific sections. If low confidence after search, mention that you checked.
+Use memory_search to recall stored facts, preferences, or notes. The search covers all
+memory files (long-term and daily logs). Follow up with memory_get to read full sections
+when you need exact text.
 
 ### Storing and managing memories
-Use the **memory_update** tool to add, edit, or delete memories. Do NOT use write_file
-or edit_file for memory files; always use memory_update.
-- **Append**: memory_update action="append" to add new facts/preferences/notes
-  - file="long_term" for durable facts and preferences (MEMORY.md)
-  - file="daily" for day-to-day notes (today's log)
-- **Edit**: memory_update action="edit" with old_text and new_text to correct or update an entry
-- **Delete**: memory_update action="delete" with old_text to remove an entry the user wants forgotten
-Before editing or deleting, use memory_get to verify the exact text to match.${contextSection}`;
+Use **memory_update** to add, edit, or delete memories. Do NOT use write_file or
+edit_file for memory files.
+- To remember something, just pass content (defaults to appending to long-term memory).
+- For daily notes, pass file="daily".
+- For edits/deletes, pass action="edit" or action="delete" with old_text.
+Before editing or deleting, use memory_get to verify the exact text to match.`;
 }
 
 function compactMarkdown(content?: string | null, maxChars = 1800): string {
@@ -247,16 +241,6 @@ ${behaviorBullets}
 ## Response Format
 
 ${formatBullets}${groupContext ? '\n\n' + buildGroupSection(groupContext) : ''}`;
-}
-
-export async function loadMemoryContext(): Promise<string | null> {
-  try {
-    const manager = await MemoryManager.get();
-    const context = await manager.loadSessionContext();
-    return context.text.trim() ? context.text : null;
-  } catch {
-    return null;
-  }
 }
 
 // ============================================================================
@@ -356,7 +340,7 @@ export function buildGroupSection(ctx: GroupContext): string {
  * @param portfolioContent - Optional PORTFOLIO.md current portfolio
  * @param thetaPolicySummary - Optional one-line THETA-POLICY summary (when tastytrade configured)
  * @param channel - Delivery channel (e.g., 'whatsapp', 'cli') — selects formatting profile
- * @param memoryContext - Optional persisted session memory from .dexter/memory/
+ * @param memoryFiles - Optional memory files currently available on disk
  * @param toolProfile - Tool/system prompt profile ('full' or 'suggest')
  */
 export function buildSystemPrompt(
@@ -368,7 +352,7 @@ export function buildSystemPrompt(
   thetaPolicySummary?: string | null,
   channel?: string,
   groupContext?: GroupContext,
-  memoryContext?: string | null,
+  memoryFiles?: string[],
   toolProfile: ToolProfile = 'full',
 ): string {
   if (toolProfile === 'suggest') {
@@ -413,7 +397,7 @@ ${toolDescriptions}
 
 ${includeSkillsSection ? buildSkillsSection() : ''}
 
-${includeMemorySection ? buildMemorySection(memoryContext ?? undefined) : ''}
+${buildMemorySection(memoryFiles ?? [])}
 
 ## North Star: Portfolio Builder
 
