@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { callLlm, type LlmResult } from '../model/llm.js';
 import { loadSoulDocument, loadSoulHLDocument, getCurrentDate } from './prompts.js';
+import { isTickerTradableOnHyperliquid } from '../tools/tastytrade/utils.js';
 import {
   writePortfolioContent,
   getPortfolioPath,
@@ -48,6 +49,168 @@ const suggestOutputSchema = z.object({
 
 type SuggestOutput = z.infer<typeof suggestOutputSchema>;
 
+const TASTYTRADE_UNIVERSE = [
+  'AMAT',
+  'ASML',
+  'LRCX',
+  'KLAC',
+  'TEL',
+  'SNPS',
+  'CDNS',
+  'CEG',
+  'EQT',
+  'VRT',
+  'BE',
+  'SEI',
+  'PSIX',
+  'CRWV',
+  'CORZ',
+  'SNDK',
+  'WDC',
+  'STX',
+  'ANET',
+  'LITE',
+  'COHR',
+  'CIEN',
+  'AVGO',
+  'MRVL',
+  'ARM',
+  'OKLO',
+  'IONQ',
+  'QBTS',
+  'KTOS',
+  'ONDS',
+  'ASTS',
+  'QS',
+  'EOSE',
+  'DELL',
+  'VRTX',
+  'LLY',
+].filter((ticker) => !isTickerTradableOnHyperliquid(ticker));
+
+const HYPERLIQUID_UNIVERSE = [
+  'TSM',
+  'NVDA',
+  'PLTR',
+  'ORCL',
+  'COIN',
+  'HOOD',
+  'CRCL',
+  'TSLA',
+  'META',
+  'MU',
+  'MSFT',
+  'AMZN',
+  'GOOGL',
+  'AAPL',
+  'INTC',
+  'GLD',
+  'SLV',
+  'SPY',
+  'SMH',
+];
+
+const TASTYTRADE_ALLOWED = new Set(TASTYTRADE_UNIVERSE);
+const HYPERLIQUID_ALLOWED = new Set(HYPERLIQUID_UNIVERSE);
+const SOUL_SECTION_PREFIXES = [
+  '## Core Motivation',
+  '## The Unified Thesis',
+  '## Conviction Tiering',
+  '## Near-Perfect Portfolio',
+  '## What I Value',
+];
+const SOUL_HL_SECTION_PREFIXES = ['## Target Allocation', '## Sizing Rules'];
+
+function normalizeTicker(ticker: string): string {
+  return ticker.trim().toUpperCase();
+}
+
+function normalizeWeights<T extends { weight: number }>(positions: T[]): T[] {
+  const sum = positions.reduce((acc, p) => acc + Math.max(0, p.weight), 0);
+  if (sum <= 0) return positions;
+  return positions.map((p) => ({
+    ...p,
+    weight: Math.round(((Math.max(0, p.weight) / sum) * 100) * 10) / 10,
+  }));
+}
+
+function mergeExclusions(
+  existing: { ticker: string; reason: string }[],
+  extra: { ticker: string; reason: string }[],
+): { ticker: string; reason: string }[] {
+  const merged = new Map<string, { ticker: string; reason: string }>();
+  for (const item of [...existing, ...extra]) {
+    const ticker = normalizeTicker(item.ticker);
+    if (!merged.has(ticker)) {
+      merged.set(ticker, { ticker, reason: item.reason });
+    }
+  }
+  return [...merged.values()].slice(0, 20);
+}
+
+function sanitizeTastytradeSleeve(
+  sleeve: NonNullable<SuggestOutput['tastytrade']>,
+): NonNullable<SuggestOutput['tastytrade']> {
+  const seen = new Set<string>();
+  const forcedExclusions: { ticker: string; reason: string }[] = [];
+  const positions = sleeve.positions
+    .map((p) => ({ ...p, ticker: normalizeTicker(p.ticker) }))
+    .filter((p) => {
+      if (seen.has(p.ticker)) return false;
+      seen.add(p.ticker);
+      if (isTickerTradableOnHyperliquid(p.ticker)) {
+        forcedExclusions.push({
+          ticker: p.ticker,
+          reason: 'Excluded from tastytrade sleeve because it trades on Hyperliquid.',
+        });
+        return false;
+      }
+      if (!TASTYTRADE_ALLOWED.has(p.ticker)) {
+        forcedExclusions.push({
+          ticker: p.ticker,
+          reason: 'Outside the off-chain AI infrastructure thesis universe.',
+        });
+        return false;
+      }
+      return true;
+    })
+    .slice(0, 20);
+
+  return {
+    ...sleeve,
+    positions: normalizeWeights(positions),
+    excluded: mergeExclusions(sleeve.excluded, forcedExclusions),
+  };
+}
+
+function sanitizeHyperliquidSleeve(
+  sleeve: NonNullable<SuggestOutput['hyperliquid']>,
+): NonNullable<SuggestOutput['hyperliquid']> {
+  const seen = new Set<string>();
+  const forcedExclusions: { ticker: string; reason: string }[] = [];
+  const positions = sleeve.positions
+    .map((p) => ({ ...p, ticker: normalizeTicker(p.ticker) }))
+    .filter((p) => {
+      if (seen.has(p.ticker)) return false;
+      seen.add(p.ticker);
+      if (!HYPERLIQUID_ALLOWED.has(p.ticker)) {
+        forcedExclusions.push({
+          ticker: p.ticker,
+          reason: 'Outside the Hyperliquid HIP-3 thesis universe.',
+        });
+        return false;
+      }
+      return true;
+    })
+    .slice(0, 20);
+
+  return {
+    ...sleeve,
+    positions: normalizeWeights(positions),
+    excluded: mergeExclusions(sleeve.excluded, forcedExclusions),
+  };
+}
+
 function compactMarkdown(content?: string | null, maxChars = 1400): string {
   if (!content) return '';
   const lines = content
@@ -56,6 +219,49 @@ function compactMarkdown(content?: string | null, maxChars = 1400): string {
     .filter((line) => line && (line.startsWith('#') || line.startsWith('-') || line.startsWith('*')));
   const summary = (lines.join('\n') || content.replace(/\s+/g, ' ').trim()).slice(0, maxChars);
   return summary.length < (content?.length ?? 0) ? `${summary}...` : summary;
+}
+
+function extractMarkdownSections(content: string, headingPrefixes: string[]): string {
+  const lines = content.split('\n');
+  const sections: string[] = [];
+  let currentHeading = '';
+  let currentLines: string[] = [];
+
+  const flush = () => {
+    if (!currentHeading) return;
+    if (headingPrefixes.some((prefix) => currentHeading.startsWith(prefix))) {
+      sections.push([currentHeading, ...currentLines].join('\n').trim());
+    }
+  };
+
+  for (const rawLine of lines) {
+    const line = rawLine.trimEnd();
+    if (line.startsWith('## ')) {
+      flush();
+      currentHeading = line;
+      currentLines = [];
+      continue;
+    }
+
+    if (currentHeading) {
+      currentLines.push(line);
+    }
+  }
+
+  flush();
+  return sections.join('\n\n');
+}
+
+function summarizeSoulForSuggest(content?: string | null, maxChars = 2200): string {
+  if (!content) return '';
+  const extracted = extractMarkdownSections(content, SOUL_SECTION_PREFIXES);
+  return compactMarkdown(extracted || content, maxChars);
+}
+
+function summarizeSoulHlForSuggest(content?: string | null, maxChars = 1200): string {
+  if (!content) return '';
+  const extracted = extractMarkdownSections(content, SOUL_HL_SECTION_PREFIXES);
+  return compactMarkdown(extracted || content, maxChars);
 }
 
 function normalizeWeight(weight: number): string {
@@ -136,6 +342,10 @@ Hard rules:
 - Return target weights, concise rationale, and excluded names with reasons
 - Keep positions between 10 and 20 for each requested sleeve
 - Prefer durable, high-conviction names over unnecessary breadth
+- Tastytrade sleeve must stay anchored to the AI infrastructure diversification universe: ${TASTYTRADE_UNIVERSE.join(', ')}
+- Do not output generic Buffett-style quality baskets like BRK.B, V, MA, COST, NVO, or broad non-thesis names
+- Hyperliquid sleeve must stay anchored to this narrower universe: ${HYPERLIQUID_UNIVERSE.join(', ')}
+- Do not output macro/fx symbols outside that list (for example SPX, NDX, DJI, XAU, XAG, CL, NG, EURUSD, USDJPY are not allowed here)
 
 Identity summary:
 ${soul || 'No SOUL summary available.'}
@@ -178,8 +388,8 @@ export async function runSuggestFastPath(args: {
   const [soul, soulHl] = await Promise.all([loadSoulDocument(), loadSoulHLDocument()]);
   const systemPrompt = buildSystemPrompt(
     args.mode,
-    compactMarkdown(soul, 1800),
-    compactMarkdown(soulHl, 1200),
+    summarizeSoulForSuggest(soul, 2200),
+    summarizeSoulHlForSuggest(soulHl, 1200),
   );
 
   const result = await callLlm(buildUserPrompt(args.mode), {
@@ -190,16 +400,39 @@ export async function runSuggestFastPath(args: {
   });
 
   const output = result.response as unknown as SuggestOutput;
-  const savedPaths = saveRequestedSleeves(args.mode, output);
+  const renderedSections: string[] = [];
+  const sanitized: SuggestOutput = {
+    tastytrade: output.tastytrade ? sanitizeTastytradeSleeve(output.tastytrade) : null,
+    hyperliquid: output.hyperliquid ? sanitizeHyperliquidSleeve(output.hyperliquid) : null,
+  };
+
+  if ((args.mode === 'both' || args.mode === 'default') && (!sanitized.tastytrade || sanitized.tastytrade.positions.length < 5)) {
+    throw new Error('Suggest fast path produced an invalid tastytrade sleeve; please retry.');
+  }
+  if ((args.mode === 'both' || args.mode === 'hyperliquid') && (!sanitized.hyperliquid || sanitized.hyperliquid.positions.length < 5)) {
+    throw new Error('Suggest fast path produced an invalid Hyperliquid sleeve; please retry.');
+  }
+
+  if (sanitized.tastytrade) {
+    renderedSections.push(renderTastytradeMarkdown(sanitized.tastytrade));
+  }
+  if (sanitized.hyperliquid) {
+    renderedSections.push(renderHyperliquidMarkdown(sanitized.hyperliquid));
+  }
+
+  const savedPaths = saveRequestedSleeves(args.mode, sanitized);
 
   const parts = ['Saved portfolio suggestion(s):', ...savedPaths.map((p) => `- ${p}`)];
-  if (output.tastytrade?.positions?.length) {
-    parts.push(`- tastytrade positions: ${output.tastytrade.positions.length}`);
+  if (sanitized.tastytrade?.positions?.length) {
+    parts.push(`- tastytrade positions: ${sanitized.tastytrade.positions.length}`);
   }
-  if (output.hyperliquid?.positions?.length) {
-    parts.push(`- hyperliquid positions: ${output.hyperliquid.positions.length}`);
+  if (sanitized.hyperliquid?.positions?.length) {
+    parts.push(`- hyperliquid positions: ${sanitized.hyperliquid.positions.length}`);
   }
   parts.push('Use `/double-check` for AIHF or `/write-essay` for drafting.');
+  if (renderedSections.length > 0) {
+    parts.push('', ...renderedSections);
+  }
 
   return { answer: parts.join('\n'), usage: result.usage };
 }
