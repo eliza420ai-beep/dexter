@@ -244,6 +244,9 @@ describe('tastytrade utils', () => {
       expect(isTickerTradableOnHyperliquid('BTC')).toBe(true);
       expect(isTickerTradableOnHyperliquid('  msft  ')).toBe(true);
       expect(isTickerTradableOnHyperliquid('TSM')).toBe(true);
+      expect(isTickerTradableOnHyperliquid('RTX')).toBe(true);
+      expect(isTickerTradableOnHyperliquid('xyz:EWJ')).toBe(true);
+      expect(isTickerTradableOnHyperliquid('BRENTOIL')).toBe(true);
     });
     test('isTickerTradableOnHyperliquid returns false for non-HL symbols', () => {
       expect(isTickerTradableOnHyperliquid('UNKNOWNXYZ')).toBe(false);

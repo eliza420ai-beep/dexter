@@ -13,6 +13,7 @@ Maps Hyperliquid (HIP-3) symbols to Financial Datasets tickers for price data. U
 | USOIL | USO | United States Oil Fund |
 | NATGAS | UNG | United States Natural Gas Fund |
 | OIL | USO | Same as USOIL |
+| BRENTOIL | BNO | United States Brent Oil Fund |
 | SILVER | SLV | iShares Silver Trust |
 | GOLD | GLD | SPDR Gold Shares |
 | COPPER | CPER | United States Copper Index Fund |
@@ -24,11 +25,13 @@ Maps Hyperliquid (HIP-3) symbols to Financial Datasets tickers for price data. U
 | Hyperliquid | FD Ticker | Proxy |
 |-------------|-----------|-------|
 | US500 | SPY | S&P 500 ETF |
+| USA100 | QQQ | Nasdaq-100 ETF proxy |
 | SEMIS | SMH | VanEck Semiconductor ETF |
 | SMALL2000 | IWM | Russell 2000 ETF |
 | MAG7 | QQQ | Nasdaq-100 (tech proxy) |
 | INFOTECH | QQQ | Nasdaq-100 |
 | ROBOT | BOTZ | Global X Robotics & AI ETF |
+| VIX | VIXY | Short-term VIX futures ETF proxy |
 | XYZ100 | SPY | Use SPY as broad market proxy |
 
 ---
@@ -54,7 +57,11 @@ Stocks use 1:1 mapping — Hyperliquid symbol = FD ticker.
 | HOOD | HOOD | Robinhood |
 | AMD | AMD | AMD |
 | MSTR | MSTR | MicroStrategy |
+| BMNR | BMNR | BitMine Immersion Technologies |
 | CRCL | CRCL | Circle (if listed) |
+| EWJ | EWJ | iShares MSCI Japan ETF |
+| EWY | EWY | iShares MSCI South Korea ETF |
+| RTX | RTX | RTX Corp. |
 | TSM | TSM | TSMC |
 
 ---
