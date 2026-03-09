@@ -7,6 +7,7 @@
  */
 
 import { DynamicStructuredTool } from '@langchain/core/tools';
+import type { RunnableConfig } from '@langchain/core/runnables';
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { z } from 'zod';
 import { callAIHF, AihfError } from './aihf-api.js';
@@ -14,6 +15,7 @@ import { comparePortfolioVsAihf, renderDoubleCheckMarkdown } from './aihf-double
 import { recordRun } from './feedback.js';
 import { parsePortfolioMarkdown } from '../../utils/portfolio-parse.js';
 import { dexterPath } from '../../utils/paths.js';
+import { getLegacyPortfolioPath } from '../portfolio/portfolio-tool.js';
 import type { TickerEntry, ExcludedEntry, DoubleCheckResult } from './types.js';
 
 const DEXTER_DIR = dexterPath();
@@ -95,10 +97,12 @@ export const aihfDoubleCheckTool = new DynamicStructuredTool({
   description:
     'Run AI Hedge Fund as a second opinion on portfolio tickers. Returns agreement score, conflicts, and excluded-but-interesting names.',
   schema: aihfSchema,
-  func: async (input) => {
+  func: async (input, _runManager, config?: RunnableConfig) => {
     if (input.action === 'view_last') {
       return viewLastReport();
     }
+
+    const onProgress = config?.metadata?.onProgress as ((msg: string) => void) | undefined;
 
     // --- Resolve tickers ---
     const defaultIncluded = input.default_included ?? readPortfolioTickers(PORTFOLIO_MD_PATH);
@@ -116,6 +120,7 @@ export const aihfDoubleCheckTool = new DynamicStructuredTool({
     }
 
     const uniqueTickers = [...new Set(allTickers.map((t) => t.toUpperCase()))];
+    onProgress?.(`Preparing AIHF run for ${uniqueTickers.length} unique tickers...`);
 
     // --- Call AIHF ---
     let aihfResult;
@@ -125,6 +130,7 @@ export const aihfDoubleCheckTool = new DynamicStructuredTool({
         startDate: input.start_date ?? null,
         endDate: input.end_date,
         initialCash: input.initial_cash,
+        onProgress,
       });
     } catch (err) {
       if (err instanceof AihfError) {
@@ -134,6 +140,7 @@ export const aihfDoubleCheckTool = new DynamicStructuredTool({
     }
 
     // --- Compare ---
+    onProgress?.('Comparing AIHF decisions against Dexter sleeves...');
     const result = comparePortfolioVsAihf(
       { defaultIncluded, hyperliquidIncluded: hlIncluded, excluded },
       aihfResult,
@@ -147,6 +154,7 @@ export const aihfDoubleCheckTool = new DynamicStructuredTool({
     ].join('\n\n');
     const filename = `AIHF-DOUBLE-CHECK-${date}.md`;
     saveReport(filename, markdown);
+    onProgress?.(`Saved AIHF report to .dexter/${filename}.`);
     try { recordRun(result, date); } catch { /* non-critical */ }
 
     // --- Format tool output ---
@@ -159,12 +167,23 @@ export const aihfDoubleCheckTool = new DynamicStructuredTool({
 // ---------------------------------------------------------------------------
 
 function readPortfolioTickers(path: string): TickerEntry[] {
-  if (!existsSync(path)) return [];
-  const content = readFileSync(path, 'utf-8');
-  return parsePortfolioMarkdown(content).map((p) => ({
-    ticker: p.ticker,
-    weight: p.weight,
-  }));
+  const legacyPath = path.endsWith('PORTFOLIO-HYPERLIQUID.md')
+    ? getLegacyPortfolioPath('hyperliquid')
+    : getLegacyPortfolioPath('default');
+
+  for (const candidate of [path, legacyPath]) {
+    if (!existsSync(candidate)) continue;
+    const content = readFileSync(candidate, 'utf-8');
+    const parsed = parsePortfolioMarkdown(content).map((p) => ({
+      ticker: p.ticker,
+      weight: p.weight,
+    }));
+    if (parsed.length > 0) {
+      return parsed;
+    }
+  }
+
+  return [];
 }
 
 function viewLastReport(): string {

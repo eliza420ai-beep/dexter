@@ -21,6 +21,7 @@ export interface CallAihfOptions {
   startDate?: string | null;
   endDate?: string;
   initialCash?: number;
+  onProgress?: (message: string) => void;
 }
 
 export async function callAIHF(opts: CallAihfOptions): Promise<AihfRunResult> {
@@ -44,6 +45,7 @@ export async function callAIHF(opts: CallAihfOptions): Promise<AihfRunResult> {
 
   const url = `${apiUrl.replace(/\/$/, '')}/hedge-fund/run`;
   const timeoutMs = getTimeoutMs();
+  opts.onProgress?.(`Starting AIHF second opinion for ${opts.tickers.length} tickers...`);
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -78,14 +80,19 @@ export async function callAIHF(opts: CallAihfOptions): Promise<AihfRunResult> {
     throw new AihfError(`AIHF returned HTTP ${response.status}: ${body.slice(0, 500)}`);
   }
 
-  return parseSseStream(response, opts.tickers);
+  opts.onProgress?.('Connected to AIHF stream. Waiting for analyst graph...');
+  return parseSseStream(response, opts.tickers, opts.onProgress);
 }
 
 // ---------------------------------------------------------------------------
 // SSE parser
 // ---------------------------------------------------------------------------
 
-export async function parseSseStream(response: Response, tickers: string[]): Promise<AihfRunResult> {
+export async function parseSseStream(
+  response: Response,
+  tickers: string[],
+  onProgress?: (message: string) => void,
+): Promise<AihfRunResult> {
   if (!response.body) {
     throw new AihfError('AIHF response has no body.');
   }
@@ -93,6 +100,7 @@ export async function parseSseStream(response: Response, tickers: string[]): Pro
   const reader = response.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
+  let completedAnalystSteps = 0;
 
   try {
     while (true) {
@@ -104,7 +112,22 @@ export async function parseSseStream(response: Response, tickers: string[]): Pro
       buffer = events.remaining;
 
       for (const evt of events.parsed) {
+        if (
+          evt.event === 'progress' &&
+          typeof evt.data === 'object' &&
+          evt.data !== null &&
+          (evt.data as { status?: string }).status?.toLowerCase() === 'complete'
+        ) {
+          completedAnalystSteps += 1;
+        }
+
+        const progressMessage = formatAihfProgressEvent(evt, tickers, completedAnalystSteps);
+        if (progressMessage) {
+          onProgress?.(progressMessage);
+        }
+
         if (evt.event === 'complete') {
+          onProgress?.('AIHF run complete. Normalizing decisions...');
           debugAihfPayload('complete_event_raw', evt.data);
           return parseCompletePayload(evt.data, tickers);
         }
@@ -124,6 +147,51 @@ export async function parseSseStream(response: Response, tickers: string[]): Pro
     'AIHF stream ended without a `complete` event. ' +
       `Run manually: poetry run python src/main.py --tickers ${tickers.join(',')} --analysts-all --show-reasoning`,
   );
+}
+
+function formatAihfProgressEvent(
+  evt: AihfSseEvent,
+  tickers: string[],
+  progressCount: number,
+): string | null {
+  if (evt.event === 'start') {
+    const data = evt.data as { status?: string; tickers?: string[] } | string;
+    if (typeof data === 'object' && data !== null) {
+      const runTickers = Array.isArray(data.tickers) ? data.tickers.length : tickers.length;
+      return `AIHF graph running for ${runTickers} tickers across 18 analyst personas...`;
+    }
+    return 'AIHF graph started...';
+  }
+
+  if (evt.event === 'progress') {
+    if (typeof evt.data === 'object' && evt.data !== null) {
+      const data = evt.data as { agent?: string; ticker?: string; status?: string };
+      const agent = formatAgentName(data.agent);
+      const ticker = data.ticker?.toUpperCase();
+      const status = data.status?.toLowerCase();
+      if (agent && ticker && status === 'complete') {
+        return `AIHF progress: ${agent} finished ${ticker} (${progressCount} analyst steps done)...`;
+      }
+      if (agent && ticker) {
+        return `AIHF progress: ${agent} processing ${ticker}...`;
+      }
+    }
+    return `AIHF progress: ${progressCount} analyst steps completed...`;
+  }
+
+  if (evt.event === 'error') {
+    return 'AIHF reported an error event...';
+  }
+
+  return null;
+}
+
+function formatAgentName(agent?: string): string | null {
+  if (!agent) return null;
+  return agent
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 }
 
 /**

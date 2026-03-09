@@ -1,14 +1,17 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { z } from 'zod';
-import { parsePortfolioMarkdown } from '../../utils/portfolio-parse.js';
+import { dexterPath } from '../../utils/paths.js';
 import { isTickerTradableOnHyperliquid } from '../tastytrade/utils.js';
 
-const DEXTER_DIR = join(homedir(), '.dexter');
-const PORTFOLIO_MD_PATH = join(DEXTER_DIR, 'PORTFOLIO.md');
-const PORTFOLIO_HL_PATH = join(DEXTER_DIR, 'PORTFOLIO-HYPERLIQUID.md');
+const DEXTER_DIR = dexterPath();
+const LEGACY_DEXTER_DIR = join(homedir(), '.dexter');
+const PORTFOLIO_MD_PATH = dexterPath('PORTFOLIO.md');
+const PORTFOLIO_HL_PATH = dexterPath('PORTFOLIO-HYPERLIQUID.md');
+const LEGACY_PORTFOLIO_MD_PATH = join(LEGACY_DEXTER_DIR, 'PORTFOLIO.md');
+const LEGACY_PORTFOLIO_HL_PATH = join(LEGACY_DEXTER_DIR, 'PORTFOLIO-HYPERLIQUID.md');
 
 export type PortfolioId = 'default' | 'hyperliquid';
 
@@ -16,13 +19,36 @@ export function getPortfolioPath(portfolioId: PortfolioId): string {
   return portfolioId === 'hyperliquid' ? PORTFOLIO_HL_PATH : PORTFOLIO_MD_PATH;
 }
 
+export function getLegacyPortfolioPath(portfolioId: PortfolioId): string {
+  return portfolioId === 'hyperliquid' ? LEGACY_PORTFOLIO_HL_PATH : LEGACY_PORTFOLIO_MD_PATH;
+}
+
+function getReadPaths(portfolioId: PortfolioId): string[] {
+  return [getPortfolioPath(portfolioId), getLegacyPortfolioPath(portfolioId)];
+}
+
+function readPortfolioContent(portfolioId: PortfolioId): { path: string; content: string } | null {
+  for (const path of getReadPaths(portfolioId)) {
+    if (existsSync(path)) {
+      return { path, content: readFileSync(path, 'utf-8') };
+    }
+  }
+  return null;
+}
+
 /** Shared write for portfolio content (used by portfolio tool and tastytrade_sync_portfolio). */
 export function writePortfolioContent(portfolioId: PortfolioId, content: string): void {
-  if (!existsSync(DEXTER_DIR)) {
-    mkdirSync(DEXTER_DIR, { recursive: true });
+  const targets = [
+    { dir: DEXTER_DIR, path: getPortfolioPath(portfolioId) },
+    { dir: LEGACY_DEXTER_DIR, path: getLegacyPortfolioPath(portfolioId) },
+  ];
+
+  for (const target of targets) {
+    if (!existsSync(target.dir)) {
+      mkdirSync(target.dir, { recursive: true });
+    }
+    writeFileSync(target.path, content, 'utf-8');
   }
-  const path = getPortfolioPath(portfolioId);
-  writeFileSync(path, content, 'utf-8');
 }
 
 export const PORTFOLIO_TOOL_DESCRIPTION = `
@@ -79,11 +105,11 @@ export const portfolioTool = new DynamicStructuredTool({
     const label = portfolioId === 'hyperliquid' ? 'Hyperliquid portfolio' : 'portfolio';
 
     if (input.action === 'view') {
-      if (!existsSync(path)) {
+      const existing = readPortfolioContent(portfolioId);
+      if (!existing) {
         return `No ${label} file yet. Use the update action with portfolio_id=${portfolioId} to save a suggested portfolio.`;
       }
-      const content = readFileSync(path, 'utf-8');
-      return `Current ${label} (${path}):\n\n${content}`;
+      return `Current ${label} (${existing.path}):\n\n${existing.content}`;
     }
 
     if (input.action === 'update') {

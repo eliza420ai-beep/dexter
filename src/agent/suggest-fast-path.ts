@@ -112,6 +112,7 @@ const HYPERLIQUID_UNIVERSE = [
 
 const TASTYTRADE_ALLOWED = new Set(TASTYTRADE_UNIVERSE);
 const HYPERLIQUID_ALLOWED = new Set(HYPERLIQUID_UNIVERSE);
+const HYPERLIQUID_DIRECT_SEMI_TICKERS = new Set(['NVDA', 'TSM', 'MU']);
 const SOUL_SECTION_PREFIXES = [
   '## Core Motivation',
   '## The Unified Thesis',
@@ -204,9 +205,21 @@ function sanitizeHyperliquidSleeve(
     })
     .slice(0, 20);
 
+  const hasDirectSemiExposure = positions.some((p) => HYPERLIQUID_DIRECT_SEMI_TICKERS.has(p.ticker));
+  const filteredPositions = positions.filter((p) => {
+    if (p.ticker === 'SMH' && hasDirectSemiExposure) {
+      forcedExclusions.push({
+        ticker: 'SMH',
+        reason: 'Redundant sector ballast when direct semiconductor names like NVDA, TSM, or MU are already in the sleeve.',
+      });
+      return false;
+    }
+    return true;
+  });
+
   return {
     ...sleeve,
-    positions: normalizeWeights(positions),
+    positions: normalizeWeights(filteredPositions),
     excluded: mergeExclusions(sleeve.excluded, forcedExclusions),
   };
 }
@@ -346,6 +359,8 @@ Hard rules:
 - Do not output generic Buffett-style quality baskets like BRK.B, V, MA, COST, NVO, or broad non-thesis names
 - Hyperliquid sleeve must stay anchored to this narrower universe: ${HYPERLIQUID_UNIVERSE.join(', ')}
 - Do not output macro/fx symbols outside that list (for example SPX, NDX, DJI, XAU, XAG, CL, NG, EURUSD, USDJPY are not allowed here)
+- If the Hyperliquid sleeve already owns direct semiconductor names like NVDA, TSM, or MU, do not use SMH because it is redundant sector ballast
+- For ballast, prefer GLD, SLV, or at most a tiny SPY weight rather than SMH when direct semi exposure is already present
 
 Identity summary:
 ${soul || 'No SOUL summary available.'}
