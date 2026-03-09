@@ -320,6 +320,34 @@ export async function runCli() {
     '  editorial checklist.',
   ].join('\n');
 
+  const CLOSE_LOOP_SHORTCUT = [
+    'Close the quarterly recursion loop after publication.',
+    '',
+    'Read these sources in order:',
+    '1) latest .dexter/QUARTERLY-REPORT-YYYY-QN.md',
+    '2) latest .dexter/QUARTERLY-REPORT-HL-YYYY-QN.md if it exists',
+    '3) latest .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md if it exists',
+    '4) latest .dexter/ESSAY-DRAFT-YYYY-QN.md',
+    '5) the published essay text or URL if I provided one',
+    '6) root SOUL.md',
+    '7) current .dexter/PORTFOLIO.md and .dexter/PORTFOLIO-HYPERLIQUID.md',
+    '8) previous quarter THESIS-DELTA-YYYY-QN.md and NEXT-QUARTER-TESTS-YYYY-QN.md if they exist',
+    '',
+    'Invoke skill "essay-postmortem".',
+    'Score the previous quarter\'s tests first if prior test files exist.',
+    'Then produce two recursive artifacts:',
+    '- THESIS-DELTA-YYYY-QN.md',
+    '- NEXT-QUARTER-TESTS-YYYY-QN.md',
+    '',
+    'Rules:',
+    '- Distinguish regime from structure',
+    '- Categorize lessons as keep, refine, add, demote, or remove',
+    '- Do not auto-edit SOUL.md in this step; propose changes only',
+    '- Keep next-quarter tests falsifiable',
+    '',
+    'Save both files with save_report and return both filenames plus a 3-bullet summary of the highest-conviction thesis changes.',
+  ].join('\n');
+
   const QUERY_SHORTCUTS: Record<string, string> = {
     '/suggest': `Suggest and save two sleeves only (no AIHF, no essay): tastytrade (portfolio_id=default) and hyperliquid (portfolio_id=hyperliquid). Keep zero overlap, include target weights + concise rationale, and include "Not in the portfolio — and why" for each sleeve. Save both files via portfolio tool.`,
     '/suggest-tastytrade': `Suggest and save only the tastytrade sleeve (portfolio_id=default). Keep to non-Hyperliquid thesis names, include target weights + concise rationale, and include "Not in the portfolio — and why". Save via portfolio tool.`,
@@ -331,6 +359,7 @@ Use aihf_double_check with action=run.
 - Confirm the saved report filename (.dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md)
 - Keep this advisory only; do not auto-modify portfolios`,
     '/write-essay': WRITE_ESSAY_SHORTCUT,
+    '/close-loop': CLOSE_LOOP_SHORTCUT,
     '/full-loop': FULL_LOOP_SHORTCUT,
     '/weekly': `Write a weekly performance report for my portfolio. Use .dexter/PORTFOLIO.md for my holdings (or the portfolio you suggested last time). For each position, fetch the price change over the past 7 days (start_date and end_date). Also fetch the 7-day performance for:
 - BTC-USD (Bitcoin)
@@ -449,6 +478,7 @@ Do not place any trades.`,
 
   const SHORTCUT_ALIASES: Record<string, string> = {
     '/LFG': '/full-loop',
+    '/retro': '/close-loop',
     '/substack-draft': '/write-essay',
     '/hypersurface': '/options-hl',
     '/options': '/options-tastytrade',

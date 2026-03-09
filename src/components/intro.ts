@@ -57,21 +57,21 @@ export class IntroComponent extends Container {
     this.addChild(this.modelText);
     this.addChild(
       new Text(
-        `${theme.muted('Try: ')}${theme.primary('/full-loop')}${theme.muted(' · ')}${theme.primary('/suggest')}${theme.muted(' · ')}${theme.primary('/double-check')}${theme.muted(' · ')}${theme.primary('/write-essay')}`,
+        `${theme.muted('Loop: ')}${theme.primary('/full-loop')}${theme.muted(' · ')}${theme.primary('/write-essay')}${theme.muted(' · ')}${theme.primary('/close-loop')}`,
         0,
         0,
       ),
     );
     this.addChild(
       new Text(
-        `${theme.muted('Or: ')}${theme.primary('/suggest-tastytrade')}${theme.muted(' · ')}${theme.primary('/suggest-hl')}${theme.muted(' · ')}${theme.primary('/weekly')}${theme.muted(' · ')}${theme.primary('/quarterly')}`,
+        `${theme.muted('Build: ')}${theme.primary('/suggest')}${theme.muted(' · ')}${theme.primary('/suggest-tastytrade')}${theme.muted(' · ')}${theme.primary('/suggest-hl')}${theme.muted(' · ')}${theme.primary('/double-check')}`,
         0,
         0,
       ),
     );
     this.addChild(
       new Text(
-        `${theme.muted('Options: ')}${theme.primary('/options-tastytrade')}${theme.muted(' · ')}${theme.primary('/options-hl')}${theme.muted(' · aliases: /LFG /options /hypersurface')}`,
+        `${theme.muted('Track: ')}${theme.primary('/weekly')}${theme.muted(' · ')}${theme.primary('/quarterly')}${theme.muted(' · options: ')}${theme.primary('/options-tastytrade')}${theme.muted(' · ')}${theme.primary('/options-hl')}${theme.muted(' · aliases: /LFG /retro /options /hypersurface')}`,
         0,
         0,
       ),

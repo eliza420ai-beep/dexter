@@ -95,6 +95,43 @@ Main excluded challengers:
 
 These are the best copy-paste commands to run manually in the `ai-hedge-fund` repo.
 
+## Manual one-ticker checks inside Dexter
+
+If you want a second opinion on **one specific ticker** from the Dexter terminal, do **not** use `/double-check` by itself. That shortcut is portfolio-wide by default.
+
+Instead, explicitly tell Dexter to call `aihf_double_check` with only one included ticker.
+
+### Default / tastytrade sleeve ticker
+
+Use this when the ticker belongs to the default sleeve:
+
+```text
+Use aihf_double_check action=run for one ticker only: AMAT.
+Do not read PORTFOLIO.md.
+Set default_included to [{"ticker":"AMAT","weight":100}], sleeve=default, top_n_included=1, analyst_preset=lean.
+Return the second-opinion summary and saved filename.
+```
+
+### Hyperliquid sleeve ticker
+
+Use this when the ticker belongs to the Hyperliquid sleeve:
+
+```text
+Use aihf_double_check action=run for one ticker only: NVDA.
+Do not read PORTFOLIO-HYPERLIQUID.md.
+Set hyperliquid_included to [{"ticker":"NVDA","weight":100}], sleeve=hyperliquid, top_n_included=1, analyst_preset=lean.
+Return the second-opinion summary and saved filename.
+```
+
+### Why this shape matters
+
+- `default_included` or `hyperliquid_included` makes the run truly single-name
+- `sleeve=default` or `sleeve=hyperliquid` prevents ambiguity
+- `top_n_included=1` keeps the run constrained
+- `analyst_preset=lean` makes it cheaper and faster for day-to-day checks
+
+`focus_tickers_csv=AMAT` is useful when you are already running against a bigger sleeve and want to narrow the result, but for a **true one-ticker run** you should explicitly set `default_included` or `hyperliquid_included` as above.
+
 ### 1. Tastytrade sleeve only
 
 Use this to validate the names Dexter currently included in the tastytrade sleeve.

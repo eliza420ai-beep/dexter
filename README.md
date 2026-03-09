@@ -129,6 +129,7 @@ Type a shortcut in the CLI to run a full query; see [ULTIMATE-TEST-QUERIES.md](d
 | `/suggest-hl` | Suggest Hyperliquid portfolio (HIP-3 onchain equities only — no BTC/SOL/HYPE); save to PORTFOLIO-HYPERLIQUID.md. |
 | `/hl-report` | Quarterly performance report for the HL sleeve only; save to `~/.dexter/QUARTERLY-REPORT-HL-*.md`. |
 | `/write-essay` | Substack-ready 2,000–5,000 word draft from reports, AIHF, SOUL, and both live sleeves. Works with fallback sources, but the best two-sleeve fund essay needs both `/quarterly` and `/hl-report` first. |
+| `/close-loop` | Post-publish recursive pass: score prior quarter tests, extract thesis deltas, and save `THESIS-DELTA-*.md` plus `NEXT-QUARTER-TESTS-*.md`. |
 | `/full-loop` | Run the full pipeline: suggest both sleeves, run AIHF double-check, then draft the essay. Best output still comes after both quarterly reports exist. |
 | `/hl-essay` | 600–800 word reflection on the on-chain stocks thesis using the latest HL quarterly report. |
 | **Theta (tastytrade options)** | |
@@ -150,6 +151,10 @@ For essays, there are two modes:
 
 - Fallback draft mode: `AIHF + SOUL + current sleeves` is enough to produce a validation-first essay when quarterly artifacts are missing.
 - Best two-sleeve fund essay mode: run both `/quarterly` and `/hl-report` first so the draft has realized performance for both sleeves, not just live structure for the Hyperliquid side.
+
+For recursion, there is a third step after publication:
+
+- Post-publish recursive mode: run `/close-loop` after the essay is live to score the previous quarter's tests, save the current quarter's thesis delta, and generate falsifiable tests for the next quarter. This keeps the essay from becoming content-only; it becomes machine-readable learning.
 
 ---
 
@@ -173,13 +178,72 @@ dexter/
 
 ## SOUL and HEARTBEAT
 
-**SOUL.md** in the repo root is injected into every session. It’s not a system prompt — it’s the lens. It defines the coverage universe (seven layers: chip → foundry → equipment → EDA → power → memory → networking), conviction tiering (Core Compounders vs Cyclical vs Speculative vs Avoid), and sizing rules (regime, layer durability, catalyst timing). Standard tools validate the consensus names; the edge lives where they can’t — equipment cycles, EDA complexity, power bottlenecks. Edit SOUL to reflect your thesis. Structure matters more than the names.
+**SOUL.md** in the repo root is injected into every session. It’s not a system prompt — it’s the lens. It defines the coverage universe (seven layers: chip → foundry → equipment → EDA → power → memory → networking), conviction tiering (Core Compounders vs Cyclical vs Speculative vs Avoid), and sizing rules (regime, layer durability, catalyst timing). Standard tools validate the consensus names; the edge lives where they can’t — equipment cycles, EDA complexity, power bottlenecks. Edit SOUL to reflect your thesis. Structure matters more than the names. Recursive updates should flow through saved `THESIS-DELTA-*.md` and `NEXT-QUARTER-TESTS-*.md` artifacts first, then into reviewed SOUL changes.
 
 **~/.dexter/HEARTBEAT.md** is your monitoring checklist. Weekly: rebalance vs target, regime label, concentration alerts, newsletter draft. Quarterly: performance vs BTC, SPY, GLD; result recorded for since-inception tracking. Keep **~/.dexter/PORTFOLIO.md** (and optionally **PORTFOLIO-HYPERLIQUID.md**) so Dexter can compare actual to target.
 
 ```bash
 cp docs/HEARTBEAT.example.md ~/.dexter/HEARTBEAT.md
 ```
+
+## Why this repo is recursive
+
+Dexter is not just a research agent or a report generator. The repo is designed as a **recursive portfolio-learning loop**:
+
+1. `SOUL.md` defines the thesis, architecture, conviction tiers, and sizing rules.
+2. Dexter builds and monitors the actual sleeves against that thesis.
+3. Quarterly reports measure what happened versus BTC, SPY, GLD, and (when available) the HL basket.
+4. AIHF provides a second system that challenges the book from a different lens.
+5. `/write-essay` turns the quarter into a narrative strong enough to expose the real tension between thesis and regime.
+6. `/close-loop` turns that narrative back into machine-readable learning:
+   - `THESIS-DELTA-YYYY-QN.md`
+   - `NEXT-QUARTER-TESTS-YYYY-QN.md`
+7. The next quarter is then judged not only on returns, but on whether the prior quarter's lessons held up.
+
+That is the recursive property: the output of one quarter becomes an input to the next quarter's judgment. Essays are not just content. Reports are not just logs. They become scored feedback against the thesis.
+
+In practice, the loop is:
+
+`SOUL.md -> portfolio -> quarterly report -> essay -> thesis delta -> next-quarter tests -> revised SOUL.md / HEARTBEAT.md -> next portfolio decisions`
+
+The important design choice is that recursion happens through **saved artifacts first**, not direct self-editing. Dexter should propose changes, score them, and carry them forward before doctrine is updated.
+
+## When to adjust `SOUL.md`
+
+`SOUL.md` is the doctrine layer. It should change when the quarter reveals a **structural** lesson, not just a temporary market move.
+
+Good reasons to update `SOUL.md`:
+
+- A thesis distinction became clearer and is likely durable. Example: **power is not one trade**; inside-the-data-center power and grid-level power deserve separate treatment.
+- A portfolio architecture rule became explicit. Example: the two-sleeve structure, zero overlap where possible, different jobs for the default and Hyperliquid sleeves.
+- A sizing or regime rule proved important enough to formalize. Example: gold strength as a regime signal, or BTC concentration as dominant regime risk.
+- A repeated AIHF disagreement pattern taught a useful meta-rule. Example: second-system disagreement should affect sizing and timing first, not automatically invalidate structure.
+- A lesson is strong enough that you want the next quarter judged against it.
+
+Bad reasons to update `SOUL.md`:
+
+- A single stock had a good or bad quarter.
+- A regime move was real but obviously temporary.
+- You are reacting to performance pain without knowing whether the problem was thesis, expression, timing, or sizing.
+- The essay sounds persuasive, but the evidence is still thin.
+- The proposed change is really a trade adjustment that belongs in `HEARTBEAT.md`, `PORTFOLIO.md`, or `PORTFOLIO-HYPERLIQUID.md`, not in doctrine.
+
+Use this filter after each quarter:
+
+1. Was the lesson **structural** or just **regime**?
+2. Does it change the worldview, or only the current expression?
+3. Would we want to judge the next quarter against this rule?
+4. Can we write a falsifiable next-quarter test for it?
+
+If the answer is "no" to most of those, do not edit `SOUL.md`. Capture it in `THESIS-DELTA-*.md` or `NEXT-QUARTER-TESTS-*.md` first and let another quarter test it.
+
+In short:
+
+- `SOUL.md` = doctrine
+- `HEARTBEAT.md` = operating checklist
+- `PORTFOLIO*.md` = current expression
+- `THESIS-DELTA-*.md` = proposed learning
+- `NEXT-QUARTER-TESTS-*.md` = falsifiable recursion
 
 ---
 

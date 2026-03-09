@@ -1,9 +1,9 @@
-# Essay Workflow — Dexter → Claude → Substack
+# Essay Workflow — Dexter → Claude → Substack → Thesis Delta
 
-**Version:** 1.0  
-**Last Updated:** 2026-03-07
+**Version:** 1.1  
+**Last Updated:** 2026-03-09
 
-Turn Dexter's quarterly reports into published essays. Learn, reflect, improve.
+Turn Dexter's quarterly reports into published essays, then turn the published essay into recursive thesis updates. Learn, reflect, improve.
 
 ---
 
@@ -14,7 +14,8 @@ Turn Dexter's quarterly reports into published essays. Learn, reflect, improve.
 3. **Run Query 5** — Reflection essay draft (optional; or paste report directly into Claude)
 4. **Polish in Claude** — Copy Dexter output (or Query 5 draft) into Claude Sonnet for essay refinement
 5. **Publish** — Substack, blog, etc.
-6. **Update SOUL.md** — Feed essay insights back into the thesis (power refinement, regime signals, etc.)
+6. **Run `/close-loop`** — Produce a thesis delta and next-quarter test set from the quarter's artifacts
+7. **Review and update SOUL.md / HEARTBEAT.md** — Apply only the structural changes that survive review
 
 ---
 
@@ -53,7 +54,20 @@ Paste the Dexter output (full report or Query 5 draft) into Claude. Ask for:
 
 Substack, blog, or wherever you publish.
 
-### 5. Feed Insights Back to SOUL.md
+### 5. Run the Recursive Postmortem
+
+Use `/close-loop` after the essay is published. The recursive pass should:
+- score the previous quarter's tests if they exist
+- classify this quarter's lessons as `keep`, `refine`, `add`, `demote`, or `remove`
+- separate regime observations from structural thesis changes
+- propose, not auto-apply, updates to `SOUL.md` and `HEARTBEAT.md`
+- generate a falsifiable test set for the next quarter
+
+Artifacts saved by the recursive pass:
+- `~/.dexter/THESIS-DELTA-YYYY-QN.md`
+- `~/.dexter/NEXT-QUARTER-TESTS-YYYY-QN.md`
+
+### 6. Feed Insights Back to SOUL.md
 
 After each essay, ask: *What did we learn that should change the thesis?*
 
@@ -72,6 +86,8 @@ Examples from [The Terminal That Thinks Like We Do](https://ikigaistudio.substac
 | `~/.dexter/PORTFOLIO-HYPERLIQUID.md` | On-chain portfolio (HIP-3 tickers) |
 | `~/.dexter/QUARTERLY-REPORT-YYYY-QN.md` | Main quarterly performance report |
 | `~/.dexter/QUARTERLY-REPORT-HL-YYYY-QN.md` | Hyperliquid quarterly report (when HL portfolio exists) |
+| `~/.dexter/THESIS-DELTA-YYYY-QN.md` | Structured post-publish thesis changes for the quarter |
+| `~/.dexter/NEXT-QUARTER-TESTS-YYYY-QN.md` | Falsifiable checks to score next quarter |
 | `SOUL.md` | Thesis, layers, conviction tiers — update from essay insights |
 | `~/.dexter/SOUL-HL.md` | Optional: HIP-3-specific thesis (target allocation, narrative) |
 
@@ -86,7 +102,8 @@ When you maintain a Hyperliquid portfolio (`PORTFOLIO-HYPERLIQUID.md`):
 3. **Query 11** — HL investor letter: same source, structured letter format for LPs.
 4. **Polish in Claude** — Same as main loop; refine voice and structure.
 5. **Publish** — Substack (or HIP-3-specific channel) for on-chain narrative.
-6. **Update HEARTBEAT** — Feed insights into the "## HIP-3 Target" section; adjust target weights if thesis evolved.
+6. **Run `/close-loop`** — Save the thesis delta and next-quarter tests for the HL-aware quarter as well.
+7. **Update HEARTBEAT** — Feed insights into the "## HIP-3 Target" section; adjust target weights if thesis evolved.
 
 ---
 
