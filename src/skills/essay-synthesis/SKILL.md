@@ -20,7 +20,11 @@ Essay Synthesis Progress:
 
 ## Step 1: Gather Source Material
 
-Read all available source reports from `.dexter/`. You need at minimum one quarterly report.
+Read all available source reports from `.dexter/`.
+
+You need at minimum one of:
+- a quarterly report, or
+- an AIHF double-check report
 
 ### Source Priority (Mandatory)
 
@@ -28,14 +32,16 @@ Use this exact priority order when multiple files exist:
 1. Latest quarterly report for the requested period (`QUARTERLY-REPORT-YYYY-QN.md`)
 2. Latest AIHF validation report for the same session/period (`AIHF-DOUBLE-CHECK-YYYY-MM-DD.md`)
 3. `SOUL.md` thesis context (`.dexter/SOUL.md` first, bundled fallback second)
+4. Current sleeve files for live context (`PORTFOLIO.md`, `PORTFOLIO-HYPERLIQUID.md`) so the essay always reflects both sleeves' current structure and weights
 
 If any input is missing:
-- Missing quarterly report: stop and ask user to run `/quarterly` (or provide report text)
+- Missing quarterly report but AIHF report exists: continue in **validation-first mode**. Use the AIHF report plus current sleeves and SOUL to write a pre-performance essay. Explicitly note that the quarterly performance report is not yet available, so attribution/performance claims are limited.
+- Missing quarterly report and missing AIHF report: stop and ask user to run `/quarterly`, `/double-check`, or provide source text
 - Missing AIHF report: continue, but include a short "validation unavailable" note in the essay body
 - Missing SOUL: continue using bundled fallback and mention that assumption briefly
 
-### 1.1 Quarterly Report (Required)
-Read the most recent `QUARTERLY-REPORT-YYYY-QN.md` (or user-specified period).
+### 1.1 Quarterly Report (Preferred)
+Read the most recent `QUARTERLY-REPORT-YYYY-QN.md` (or user-specified period) if it exists.
 
 **Extract:** portfolio return, benchmark returns (BTC, SPY, Gold), layer/tier attribution, regime assessment, conviction-tier performance, outlook.
 
@@ -54,7 +60,12 @@ Read `.dexter/SOUL.md` or the bundled `SOUL.md`.
 
 **Extract:** current thesis layers, conviction tiers, regime framework. This is the thesis the essay measures against.
 
-### 1.5 VOICE.md and VOICE_DETAILED.md
+### 1.5 Current Sleeves (Always read when available)
+Read the current `PORTFOLIO.md` and `PORTFOLIO-HYPERLIQUID.md` whenever they exist.
+
+**Extract:** current weights, overlap rules, top positions, ballast names, sleeve split, and the "Not in the portfolio — and why" reasoning. Use these as the structural evidence layer. When quarterly attribution exists, use the sleeves to keep the essay aligned with the current book. When quarterly attribution is missing, use them as the main structure source.
+
+### 1.6 VOICE.md and VOICE_DETAILED.md
 These are already loaded into your system prompt. Use them as the authoritative style guide.
 
 ## Step 2: Identify Narrative Threads
@@ -67,6 +78,7 @@ From the gathered data, identify 3-5 narrative threads. Good threads include:
 4. **The excluded name** — If AIHF flagged an excluded ticker as interesting, explore why Dexter passed and whether that was wise.
 5. **The sizing question** — Did position sizing match conviction? Where was the portfolio overweight vs thesis? Where was it underweight?
 6. **The HIP-3 experiment** — If HL data exists: how did on-chain equities perform vs traditional sleeve? What does tokenization unlock that traditional brokerage doesn't?
+7. **The pre-mortem** — If no quarterly report exists: what is the book implicitly betting on, what did the committee reject, and what would invalidate the current structure before results arrive?
 
 Pick the 2-3 strongest threads. Every thread needs at least one precise number.
 
@@ -84,6 +96,22 @@ Use **"Thesis → Evidence → System mapping → Implication → Close"** struc
 6. **One sharp sentence** — Captures the quarter.
 7. **The life image or compressed thesis** — Closing before "Sixty-seven."
 8. **"Sixty-seven."** — Always. Non-negotiable.
+
+### Validation-First Essay (Use when quarterly report is missing but AIHF exists)
+
+Use **"Current book → Committee challenge → Thesis defense → Decision layer → Invalidation → Close"** structure:
+
+1. **Opening hook** — One sharp sentence about the current book or the committee disagreement.
+2. **Thesis map** — What the current sleeves are actually betting on, with precise weights and category structure.
+3. **Committee challenge** — What AIHF rejected, with agreement %, conflict count, and the most important disagreements.
+4. **Decision layer** — What stays, what gets questioned, what still needs real-world performance evidence.
+5. **Risk + invalidation** — What would prove the current book wrong before the quarterly report arrives.
+6. **Close** — One sharp sentence before "Sixty-seven."
+
+In this mode:
+- Do not fake realized performance, attribution, or benchmark returns from a missing quarterly artifact
+- You may use current weights, AIHF agreement/conflict numbers, and thesis-layer structure as the main evidence base
+- Include a brief explicit note that this is a pre-performance draft because the quarterly report is not yet available
 
 ### Direct Address Essay (Use when essay targets non-technical readers)
 
@@ -128,6 +156,9 @@ Weave the AIHF double-check naturally into the narrative. Do not present it as a
 
 > "We asked the committee — eighteen agents, each with their own lens. The agreement was 87%. But the 13% is where it gets interesting. Three of them flagged NVDA as a sell at current levels. The reasoning: valuation stretched after a multi-year run, supply catching up to demand. They might be right. The thesis says hold. The committee says trim. We quantify the tension."
 
+### Missing Quarterly Report Rule
+If the quarterly report is missing but AIHF exists, the essay must still read like a finished essay, not an error message. Mention the missing quarterly artifact once, briefly, then move into the actual argument.
+
 ## Step 5: Self-Check Against Brand Checklist
 
 Before saving, verify:
@@ -159,7 +190,9 @@ If any checklist item fails:
 
 Use the `save_report` tool to save the essay:
 
-**Filename:** `ESSAY-DRAFT-YYYY-QN.md` (e.g. `ESSAY-DRAFT-2026-Q1.md`)
+**Filename:** Prefer `ESSAY-DRAFT-YYYY-QN.md` when a quarterly period is known (e.g. `ESSAY-DRAFT-2026-Q1.md`).
+
+If no quarterly report exists, infer the current quarter from today's date and still save as `ESSAY-DRAFT-YYYY-QN.md`.
 
 If a Hyperliquid-specific essay was written: `ESSAY-DRAFT-HL-YYYY-QN.md`
 

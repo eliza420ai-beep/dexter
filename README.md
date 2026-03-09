@@ -124,6 +124,8 @@ Type a shortcut in the CLI to run a full query; see [ULTIMATE-TEST-QUERIES.md](d
 | `/quarterly` | Quarterly report: portfolio vs benchmarks, layer attribution, regime assessment, outlook; save to `~/.dexter/QUARTERLY-REPORT-*.md`. |
 | `/suggest-hl` | Suggest Hyperliquid portfolio (HIP-3 onchain equities only — no BTC/SOL/HYPE); save to PORTFOLIO-HYPERLIQUID.md. |
 | `/hl-report` | Quarterly performance report for the HL sleeve only; save to `~/.dexter/QUARTERLY-REPORT-HL-*.md`. |
+| `/write-essay` | Substack-ready 2,000–5,000 word draft from reports, AIHF, SOUL, and both live sleeves. Works with fallback sources, but the best two-sleeve fund essay needs both `/quarterly` and `/hl-report` first. |
+| `/full-loop` | Run the full pipeline: suggest both sleeves, run AIHF double-check, then draft the essay. Best output still comes after both quarterly reports exist. |
 | `/hl-essay` | 600–800 word reflection on the on-chain stocks thesis using the latest HL quarterly report. |
 | **Theta (tastytrade options)** | |
 | `/theta-policy` | Bootstrap or explain `~/.dexter/THETA-POLICY.md` (allowed underlyings, no-call list, DTE, risk caps). No trades. |
@@ -139,6 +141,11 @@ Type a shortcut in the CLI to run a full query; see [ULTIMATE-TEST-QUERIES.md](d
 | `/hypersurface` | **Hypersurface-first advice** — optimal strike for BTC options this Friday. You execute manually on Hypersurface; no broker orders. Prioritizes **why the chosen strike wins versus neighboring lines** and keeps IBIT/tastytrade commentary brief. |
 | **Broker status** | |
 | `/tastytrade-status` | Report tastytrade setup: OAuth state, credentials path, configured vs connected. |
+
+For essays, there are two modes:
+
+- Fallback draft mode: `AIHF + SOUL + current sleeves` is enough to produce a validation-first essay when quarterly artifacts are missing.
+- Best two-sleeve fund essay mode: run both `/quarterly` and `/hl-report` first so the draft has realized performance for both sleeves, not just live structure for the Hyperliquid side.
 
 ---
 

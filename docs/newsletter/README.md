@@ -45,6 +45,8 @@ We wired in an entire second brain. The [AI Hedge Fund](https://github.com/eliza
 
 New `essay-synthesis` skill: a 6-step SKILL.md that reads the quarterly report, the AIHF double-check, and SOUL.md, identifies narrative threads (thesis validation, regime tension, "the committee disagreed on NVDA"), and drafts a 2,000–5,000 word essay in the ikigaistudio voice. Precise numbers. No hype. Ends with "Sixty-seven." Saves to `~/.dexter/ESSAY-DRAFT-YYYY-QN.md`.
 
+If the quarterly report is missing, the skill now falls back to a validation-first draft using the AIHF report, SOUL, and the current sleeves instead of hard-stopping. It only blocks if both the quarterly report and AIHF report are missing.
+
 The AIHF data gives the essays a new thread that was never possible before: "We asked the committee. The committee pushed back on NVDA. Here's whether the committee was right."
 
 **And the heartbeat runs it automatically.**

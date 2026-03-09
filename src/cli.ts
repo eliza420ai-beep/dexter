@@ -275,8 +275,14 @@ Source priority is mandatory:
 1) latest .dexter/QUARTERLY-REPORT-YYYY-QN.md
 2) latest .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md
 3) .dexter/SOUL.md (or bundled SOUL fallback)
+4) current .dexter/PORTFOLIO.md and .dexter/PORTFOLIO-HYPERLIQUID.md so the essay reflects both sleeves' live structure
 
 Invoke skill "essay-synthesis" and draft 2,000–5,000 words in ikigaistudio voice.
+Fallback rule:
+- if quarterly report exists, use normal quarterly-first essay mode
+- if quarterly is missing but AIHF exists, write a validation-first draft from AIHF + SOUL + current sleeves instead of stopping
+- if both quarterly and AIHF are missing, stop and say which artifact is needed
+- best-quality two-sleeve fund essay: run both /quarterly and /hl-report first so the draft has realized performance for both sleeves, not just live structure for Hyperliquid
 Quality gates before finalizing:
 - required sections: Hook, Thesis map, Committee challenge, Decision layer, Risk + invalidation
 - at least 3 precise numeric claims in first 500 words
@@ -299,7 +305,10 @@ Step 2 — AIHF SECOND OPINION: Run aihf_double_check with action=run.
 
 Step 3 — ESSAY DRAFT: Invoke the essay-synthesis skill. Source priority:
   latest QUARTERLY-REPORT, then AIHF-DOUBLE-CHECK report from step 2,
-  then SOUL.md. Draft 2,000-5,000 words in ikigaistudio voice.
+  then SOUL.md, plus both live sleeve files. If the quarterly report is
+  missing, fall back to AIHF + SOUL + current sleeves and still draft
+  2,000-5,000 words in ikigaistudio voice. Best-quality two-sleeve fund
+  essay requires both /quarterly and /hl-report first.
 
 Step 4 — QUALITY GATES: Required sections (Hook, Thesis map,
   Committee challenge, Decision layer, Risk + invalidation).
