@@ -57,21 +57,21 @@ export class IntroComponent extends Container {
     this.addChild(this.modelText);
     this.addChild(
       new Text(
-        `${theme.muted('Try: ')}${theme.primary('/suggest')}${theme.muted(' · ')}${theme.primary('/double-check')}${theme.muted(' · ')}${theme.primary('/write-essay')}${theme.muted(' · ')}${theme.primary('/full-loop')}`,
+        `${theme.muted('Try: ')}${theme.primary('/full-loop')}${theme.muted(' · ')}${theme.primary('/suggest')}${theme.muted(' · ')}${theme.primary('/double-check')}${theme.muted(' · ')}${theme.primary('/write-essay')}`,
         0,
         0,
       ),
     );
     this.addChild(
       new Text(
-        `${theme.muted('Or: ')}${theme.primary('/weekly')}${theme.muted(' · ')}${theme.primary('/quarterly')}${theme.muted(' · ')}${theme.primary('/suggest-hl')}${theme.muted(' · ')}${theme.primary('/suggest-tastytrade')}`,
+        `${theme.muted('Or: ')}${theme.primary('/suggest-tastytrade')}${theme.muted(' · ')}${theme.primary('/suggest-hl')}${theme.muted(' · ')}${theme.primary('/weekly')}${theme.muted(' · ')}${theme.primary('/quarterly')}`,
         0,
         0,
       ),
     );
     this.addChild(
       new Text(
-        `${theme.muted('Options: ')}${theme.primary('/options-hl')}${theme.muted(' · ')}${theme.primary('/options-tastytrade')}${theme.muted(' · aliases: /LFG /options /hypersurface')}`,
+        `${theme.muted('Options: ')}${theme.primary('/options-tastytrade')}${theme.muted(' · ')}${theme.primary('/options-hl')}${theme.muted(' · aliases: /LFG /options /hypersurface')}`,
         0,
         0,
       ),
