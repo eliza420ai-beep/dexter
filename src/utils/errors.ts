@@ -236,7 +236,10 @@ export function formatUserFacingError(raw: string, provider?: string): string {
       return 'Context overflow: the conversation is too large for the model. ' +
         'Try starting a new conversation or use a model with a larger context window.';
     case 'rate_limit':
-      return `${providerLabel}API rate limit reached. Please wait a moment and try again.`;
+      return (
+        `${providerLabel}API rate limit reached. ` +
+        'Dexter already auto-retried with backoff. Please wait a moment and try again.'
+      );
     case 'billing':
       return `${providerLabel}API key has run out of credits or has an insufficient balance. ` +
         'Check your billing dashboard and top up, or switch to a different API key.';

@@ -12,7 +12,7 @@ import { z } from 'zod';
 import { DEFAULT_SYSTEM_PROMPT } from '@/agent/prompts';
 import type { TokenUsage } from '@/agent/types';
 import { logger } from '@/utils';
-import { classifyError, isNonRetryableError } from '@/utils/errors';
+import { classifyError, isNonRetryableError, isRateLimitError } from '@/utils/errors';
 import { resolveProvider, getProviderById } from '@/providers';
 
 export const DEFAULT_PROVIDER = 'openai';
@@ -26,24 +26,88 @@ export function getFastModel(modelProvider: string, fallbackModel: string): stri
   return getProviderById(modelProvider)?.fastModel ?? fallbackModel;
 }
 
-// Generic retry helper with exponential backoff
-async function withRetry<T>(fn: () => Promise<T>, provider: string, maxAttempts = 3): Promise<T> {
-  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+const DEFAULT_MAX_ATTEMPTS = 3;
+const DEFAULT_RATE_LIMIT_MAX_ATTEMPTS = 5;
+const DEFAULT_BASE_DELAY_MS = 500;
+const RATE_LIMIT_BASE_DELAY_MS = 2_000;
+const MAX_BACKOFF_MS = 30_000;
+
+function getPositiveIntEnv(name: string, fallback: number): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = parseInt(raw, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function extractRetryAfterMs(err: unknown): number | null {
+  const maybeObj = err as Record<string, unknown> | undefined;
+  if (!maybeObj || typeof maybeObj !== 'object') return null;
+
+  // Common SDK shape: err.response.headers.get('retry-after')
+  const response = maybeObj.response as Record<string, unknown> | undefined;
+  const headers = response?.headers as
+    | { get?: (name: string) => string | null | undefined }
+    | Record<string, unknown>
+    | undefined;
+
+  const readHeader = (): string | null => {
+    if (!headers) return null;
+    if (typeof (headers as { get?: unknown }).get === 'function') {
+      const value = (headers as { get: (name: string) => string | null | undefined }).get('retry-after');
+      return value ?? null;
+    }
+    const direct = (headers as Record<string, unknown>)['retry-after'];
+    return typeof direct === 'string' ? direct : null;
+  };
+
+  const retryAfter = readHeader();
+  if (!retryAfter) return null;
+  const sec = Number(retryAfter);
+  if (!Number.isNaN(sec) && sec > 0) return sec * 1000;
+  return null;
+}
+
+function computeDelayMs(errorMessage: string, attempt: number, err: unknown): number {
+  const isRate = isRateLimitError(errorMessage);
+  const retryAfterMs = extractRetryAfterMs(err);
+  if (retryAfterMs && retryAfterMs > 0) return Math.min(retryAfterMs, MAX_BACKOFF_MS);
+
+  const base = isRate ? RATE_LIMIT_BASE_DELAY_MS : DEFAULT_BASE_DELAY_MS;
+  const expo = Math.min(base * 2 ** attempt, MAX_BACKOFF_MS);
+  const jitter = Math.floor(Math.random() * 500);
+  return expo + jitter;
+}
+
+// Generic retry helper with provider-aware backoff
+async function withRetry<T>(fn: () => Promise<T>, provider: string): Promise<T> {
+  const maxAttempts = getPositiveIntEnv('LLM_MAX_ATTEMPTS', DEFAULT_MAX_ATTEMPTS);
+  const rateLimitMaxAttempts = getPositiveIntEnv(
+    'LLM_RATE_LIMIT_MAX_ATTEMPTS',
+    DEFAULT_RATE_LIMIT_MAX_ATTEMPTS,
+  );
+
+  for (let attempt = 0; attempt < Math.max(maxAttempts, rateLimitMaxAttempts); attempt++) {
     try {
       return await fn();
     } catch (e) {
       const message = e instanceof Error ? e.message : String(e);
       const errorType = classifyError(message);
-      logger.error(`[${provider} API] ${errorType} error (attempt ${attempt + 1}/${maxAttempts}): ${message}`);
+      const perTypeMaxAttempts = errorType === 'rate_limit' ? rateLimitMaxAttempts : maxAttempts;
+      logger.error(
+        `[${provider} API] ${errorType} error (attempt ${attempt + 1}/${perTypeMaxAttempts}): ${message}`,
+      );
 
       if (isNonRetryableError(message)) {
         throw new Error(`[${provider} API] ${message}`);
       }
 
-      if (attempt === maxAttempts - 1) {
+      if (attempt >= perTypeMaxAttempts - 1) {
         throw new Error(`[${provider} API] ${message}`);
       }
-      await new Promise((r) => setTimeout(r, 500 * 2 ** attempt));
+
+      const delayMs = computeDelayMs(message, attempt, e);
+      logger.warn(`[${provider} API] retrying in ${delayMs}ms`);
+      await new Promise((r) => setTimeout(r, delayMs));
     }
   }
   throw new Error('Unreachable');
