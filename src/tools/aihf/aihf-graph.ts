@@ -30,12 +30,24 @@ const ANALYST_IDS = [
 ] as const;
 
 export type AnalystId = (typeof ANALYST_IDS)[number];
+export type AnalystPreset = 'full' | 'lean';
+
+const LEAN_ANALYST_IDS = [
+  'warren_buffett',
+  'charlie_munger',
+  'aswath_damodaran',
+  'michael_burry',
+  'technical_analyst',
+  'fundamentals_analyst',
+  'valuation_analyst',
+  'sentiment_analyst',
+] as const satisfies readonly AnalystId[];
 
 const SUFFIX = 'dxt001';
 const PM_NODE_ID = `portfolio_manager_${SUFFIX}`;
 
-export function getAnalystIds(): readonly string[] {
-  return ANALYST_IDS;
+export function getAnalystIds(preset: AnalystPreset = 'full'): readonly string[] {
+  return preset === 'lean' ? LEAN_ANALYST_IDS : ANALYST_IDS;
 }
 
 export function getPMNodeId(): string {
@@ -51,12 +63,17 @@ function suffixed(id: string): string {
 }
 
 export function getDefaultAihfGraph(): AihfGraph {
+  return getAihfGraph('full');
+}
+
+export function getAihfGraph(preset: AnalystPreset = 'full'): AihfGraph {
+  const analystIds = getAnalystIds(preset);
   const nodes: AihfGraphNode[] = [
-    ...ANALYST_IDS.map((id) => ({ id: suffixed(id), type: 'analyst' })),
+    ...analystIds.map((id) => ({ id: suffixed(id), type: 'analyst' })),
     { id: PM_NODE_ID, type: 'portfolio_manager' },
   ];
 
-  const edges: AihfGraphEdge[] = ANALYST_IDS.map((id) => ({
+  const edges: AihfGraphEdge[] = analystIds.map((id) => ({
     id: `${suffixed(id)}->${PM_NODE_ID}`,
     source: suffixed(id),
     target: PM_NODE_ID,

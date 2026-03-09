@@ -21,7 +21,12 @@ export interface HistoryEntry {
   date: string;
   summary: {
     included_agreement_pct: number;
+    weighted_included_agreement_pct?: number;
+    included_count?: number;
+    included_validated_count?: number;
+    included_agreement_count?: number;
     conflict_count: number;
+    soft_disagreement_count?: number;
     excluded_interesting_count: number;
   };
   conflicts: Array<{

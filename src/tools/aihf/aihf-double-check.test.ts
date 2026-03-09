@@ -8,7 +8,8 @@ import {
   renderDoubleCheckMarkdown,
 } from './aihf-double-check.js';
 import { extractSseEvents } from './aihf-api.js';
-import { getDefaultAihfGraph, getAnalystIds, getPMNodeId } from './aihf-graph.js';
+import { getAihfGraph, getDefaultAihfGraph, getAnalystIds, getPMNodeId } from './aihf-graph.js';
+import { selectRunUniverse } from './aihf-double-check-tool.js';
 import type { AihfDecision, AihfRunResult, AihfTickerSignals, TickerEntry, ExcludedEntry } from './types.js';
 
 const __dirname2 = dirname(fileURLToPath(import.meta.url));
@@ -38,6 +39,46 @@ describe('aihf-graph', () => {
     const graph = getDefaultAihfGraph();
     const ids = graph.nodes.map((n) => n.id);
     expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  test('lean preset uses fewer analysts while preserving the PM node', () => {
+    const graph = getAihfGraph('lean');
+    expect(graph.nodes.filter((n) => n.type === 'analyst').length).toBe(8);
+    expect(graph.nodes.filter((n) => n.type === 'portfolio_manager').length).toBe(1);
+    expect(getAnalystIds('lean')).toContain('warren_buffett');
+    expect(getAnalystIds('lean')).not.toContain('cathie_wood');
+  });
+});
+
+describe('selectRunUniverse', () => {
+  test('filters to one sleeve, top weights, and focus tickers', () => {
+    const selected = selectRunUniverse(
+      {
+        defaultIncluded: [
+          { ticker: 'AMAT', weight: 14 },
+          { ticker: 'ASML', weight: 12 },
+          { ticker: 'ANET', weight: 8 },
+        ],
+        hyperliquidIncluded: [
+          { ticker: 'NVDA', weight: 10 },
+          { ticker: 'TSM', weight: 16 },
+        ],
+        excluded: [
+          { ticker: 'MU', reason: 'Excluded.', sleeve: 'default' },
+          { ticker: 'QQQ', reason: 'Excluded.', sleeve: 'hyperliquid' },
+        ],
+      },
+      {
+        sleeve: 'default',
+        topNIncluded: 2,
+        minWeightPct: 10,
+        focusTickersCsv: 'amat,mu,qqq',
+      },
+    );
+
+    expect(selected.defaultIncluded.map((entry) => entry.ticker)).toEqual(['AMAT']);
+    expect(selected.hyperliquidIncluded).toEqual([]);
+    expect(selected.excluded.map((entry) => entry.ticker)).toEqual(['MU']);
   });
 });
 
@@ -151,10 +192,19 @@ describe('comparePortfolioVsAihf', () => {
     );
     expect(result.summary).toBeDefined();
     expect(typeof result.summary.included_agreement_pct).toBe('number');
+    expect(typeof result.summary.weighted_included_agreement_pct).toBe('number');
+    expect(typeof result.summary.included_count).toBe('number');
+    expect(typeof result.summary.included_validated_count).toBe('number');
+    expect(typeof result.summary.included_agreement_count).toBe('number');
     expect(result.summary.included_agreement_pct).toBeGreaterThanOrEqual(0);
     expect(result.summary.included_agreement_pct).toBeLessThanOrEqual(1);
+    expect(result.summary.weighted_included_agreement_pct).toBeGreaterThanOrEqual(0);
+    expect(result.summary.weighted_included_agreement_pct).toBeLessThanOrEqual(1);
     expect(typeof result.summary.conflict_count).toBe('number');
+    expect(typeof result.summary.soft_disagreement_count).toBe('number');
     expect(typeof result.summary.excluded_interesting_count).toBe('number');
+    expect(result.summary.by_sleeve.default).toBeDefined();
+    expect(result.summary.by_sleeve.hyperliquid).toBeDefined();
   });
 
   test('flags NVDA as a conflict (AIHF sell vs Dexter included)', () => {
@@ -166,6 +216,13 @@ describe('comparePortfolioVsAihf', () => {
     expect(nvdaConflict).toBeDefined();
     expect(nvdaConflict!.aihf_stance).toBe('SELL');
     expect(nvdaConflict!.sleeve).toBe('hyperliquid');
+    expect(nvdaConflict!.analyst_split).toBeDefined();
+    expect(
+      nvdaConflict!.analyst_split!.top_bullish.some((a) => a.analyst_name === 'Cathie Wood'),
+    ).toBe(true);
+    expect(
+      nvdaConflict!.analyst_split!.top_bearish.some((a) => a.analyst_name === 'Michael Burry'),
+    ).toBe(true);
   });
 
   test('flags MU as excluded-but-interesting (AIHF buy)', () => {
@@ -189,7 +246,43 @@ describe('comparePortfolioVsAihf', () => {
       limitedAihf,
     );
     expect(result.summary.included_agreement_pct).toBe(1);
+    expect(result.summary.weighted_included_agreement_pct).toBe(1);
     expect(result.aihf_raw_meta.partial).toBe(true);
+  });
+
+  test('tracks soft disagreements separately from agreements and hard conflicts', () => {
+    const manualAihf: AihfRunResult = {
+      decisions: {
+        AMAT: { action: 'short', quantity: 1, confidence: 60, reasoning: 'Mildly bearish.' },
+        TSM: { action: 'hold', quantity: 1, confidence: 80, reasoning: 'Still acceptable.' },
+      },
+      analyst_signals: {
+        AMAT: {
+          a1: { signal: 'bearish', confidence: 80, reasoning: '' },
+          a2: { signal: 'neutral', confidence: 50, reasoning: '' },
+        },
+        TSM: {
+          a1: { signal: 'bullish', confidence: 80, reasoning: '' },
+        },
+      },
+      current_prices: {},
+    };
+
+    const result = comparePortfolioVsAihf(
+      {
+        defaultIncluded: [{ ticker: 'AMAT', weight: 80 }],
+        hyperliquidIncluded: [{ ticker: 'TSM', weight: 20 }],
+        excluded: [],
+      },
+      manualAihf,
+    );
+
+    expect(result.summary.included_agreement_count).toBe(1);
+    expect(result.summary.conflict_count).toBe(0);
+    expect(result.summary.soft_disagreement_count).toBe(1);
+    expect(result.soft_disagreements.map((d) => d.ticker)).toContain('AMAT');
+    expect(result.summary.included_agreement_pct).toBe(0.5);
+    expect(result.summary.weighted_included_agreement_pct).toBe(0.2);
   });
 });
 
@@ -216,6 +309,8 @@ describe('renderDoubleCheckMarkdown', () => {
     expect(md).toContain('# AIHF Double-Check Report');
     expect(md).toContain('2026-03-09');
     expect(md).toContain('## Summary');
+    expect(md).toContain('## Analyst Split By Conflict');
+    expect(md).toContain('## Soft Disagreements');
     expect(md).toContain('## High-Conviction Conflicts');
     expect(md).toContain('## Excluded But Interesting');
   });

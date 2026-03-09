@@ -18,8 +18,12 @@ The bar is the **Portfolio Builder**: build and maintain a portfolio aligned wit
 - [SOUL and HEARTBEAT](#soul-and-heartbeat)
 - [Example queries](#example-queries)
 - [tastytrade](#tastytrade)
+  - [Why tastytrade is in Dexter](#why-tastytrade-is-in-dexter)
+  - [How the integration works](#how-the-integration-works)
   - [Theta logic (Phase 5)](#theta-logic-phase-5)
 - [Hyperliquid](#hyperliquid)
+  - [Why Hyperliquid is in Dexter](#why-hyperliquid-is-in-dexter)
+  - [How the integration works](#how-the-integration-works-1)
 - [Evaluating, rate limits, debugging](#evaluating-rate-limits-debugging)
 - [Documentation](#documentation)
 - [License](#license)
@@ -197,6 +201,29 @@ More: [ULTIMATE-TEST-QUERIES.md](docs/ULTIMATE-TEST-QUERIES.md).
 
 Three states: **not connected** → **read-only** → **trading enabled**. In read-only you get accounts, positions, balances, option chain, theta scan, strategy preview, and **order dry-run** — no live orders. When you set `TASTYTRADE_ORDER_ENABLED=true`, live_orders, submit, and cancel appear; submit and cancel still require explicit approval in the CLI. Use `/tastytrade-status` to see your state.
 
+### Why tastytrade is in Dexter
+
+We did not integrate tastytrade so Dexter could become a generic broker chatbot. We integrated it because this repo is trying to close the loop between **thesis**, **portfolio**, and **execution**. Without broker state, Dexter can suggest a beautiful target portfolio while being blind to what you actually hold, how much buying power is left, which options are already open, where the risk is concentrated, and whether a “good idea” is even feasible in the real account. tastytrade turns Dexter from a research agent that can talk about options into an operator that can reason against the live book.
+
+That matters because the repo is built around a very specific structure: **SOUL.md** defines the worldview, `PORTFOLIO.md` defines target exposure, HEARTBEAT checks drift, and the broker integration tells Dexter what is true right now. The tastytrade layer is what lets those pieces meet. Live balances and positions can be normalized, synced into the portfolio format, compared against targets, and fed back into options logic. Instead of saying “sell premium on whatever looks liquid,” Dexter can ask the more important question: *does this trade improve the portfolio we are actually trying to build?*
+
+In practice, tastytrade unlocks six concrete capabilities. First, **live account awareness**: accounts, balances, positions, quotes, chains, transactions, watchlists, and risk metrics. Second, **portfolio sync**: broker positions can be transformed into a `PORTFOLIO.md`-style table with target/actual/gap so HEARTBEAT and portfolio review work from reality, not stale markdown. Third, **thesis-aware theta discovery**: scans start from SOUL-aligned underlyings and policy constraints instead of defaulting to SPX/SPY/QQQ. Fourth, **decision support before execution**: trade preview, dry-run, roll, and repair explain what a trade is, why it fits, what it risks, and how it should be managed. Fifth, **execution with brakes**: live submission is opt-in and approval-gated. Sixth, **venue separation**: tastytrade is the off-chain sleeve, Hyperliquid is the on-chain sleeve, and the code enforces zero overlap so the same thesis is not accidentally duplicated across venues.
+
+So the integration exists for one reason: to make the repo accountable to portfolio outcomes. Research generates candidates. tastytrade tells Dexter what can actually be done, what should be done next, and whether the move still fits the thesis after you account for the book you already own.
+
+### How the integration works
+
+The integration is split into four layers.
+
+1. **Authentication and operator state.** `src/tools/tastytrade/auth.ts` manages OAuth credentials in `~/.dexter/tastytrade-credentials.json`, refreshes access tokens, and exposes the repo’s three-state model: `not_connected`, `read_only`, and `trading_enabled`. `src/scripts/tastytrade-login.ts` gives the repo a first-class broker login flow via `bun run tastytrade:login` or `bun run start -- tastytrade login`.
+2. **API transport and broker primitives.** `src/tools/tastytrade/api.ts` wraps every broker request with token refresh, bounded concurrency, retry/backoff, and helpers for accounts, balances, positions, chains, quotes, orders, transactions, and watchlists. This is the thin broker layer Dexter builds on.
+3. **Tool registration and safety gating.** `src/tools/registry.ts` only exposes tastytrade tools when the OAuth client is configured and usable credentials exist. Live order tools are registered only when `TASTYTRADE_ORDER_ENABLED=true`. On top of that, `src/agent/tool-executor.ts` forces explicit runtime approval for `tastytrade_submit_order` and `tastytrade_cancel_order`, so even with trading enabled, nothing is sent silently.
+4. **Portfolio and policy intelligence.** `src/tools/tastytrade/utils.ts` is where the repo-specific logic lives: 5-minute broker caching, first-query session sync into `PORTFOLIO.md`, option symbol normalization, THETA-POLICY parsing, SOUL/PORTFOLIO context loading, earnings-window filtering, and the hard zero-overlap rule with Hyperliquid. `src/agent/suggest-fast-path.ts` uses the same overlap logic when generating sleeves, so portfolio construction and options workflows obey the same venue split.
+
+That last layer is the real point of the integration. The broker data is not treated as an isolated feed. It is fused with thesis and portfolio context. `tastytrade_sync_portfolio` turns live positions into target/actual/gap views. `tastytrade_theta_scan` starts from allowed underlyings, removes Hyperliquid-overlap names, checks earnings windows, measures buying power and max-loss caps, and then scores candidates. `tastytrade_strategy_preview` validates a proposed order against policy, attaches a trade memo, and runs dry-run before any live action. `tastytrade_submit_order` re-checks policy again at the moment of submission and invalidates broker cache after the trade lands.
+
+The result is a broker integration that is deliberately opinionated. It is not “connect API, place order.” It is “connect the broker to the portfolio builder.” tastytrade gives Dexter the missing execution context for the off-chain sleeve: live holdings, live feasibility, live risk, and a clean path from thesis to preview to approval to order.
+
 ### Theta logic (Phase 5)
 
 **What it is:** Theta = options premium selling (credit spreads, covered calls, cash-secured puts, iron condors). You sell time decay; Dexter helps find setups that fit your thesis and risk rules. The whole flow is **SOUL-first**: underlyings, sizing, and guardrails come from your identity and from **~/.dexter/THETA-POLICY.md**, not from generic index defaults.
@@ -229,6 +256,30 @@ Three states: **not connected** → **read-only** → **trading enabled**. In re
 **HIP-3 sleeve = onchain equities only.** The HL portfolio (PORTFOLIO-HYPERLIQUID.md) is for tokenized stocks, commodities, and indices — TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL, TSLA, META, etc. Do *not* put BTC, SOL, HYPE, ETH, SUI, or NEAR in the HL target: core crypto is held separately (e.g. 80% BTC, 10% SOL, 10% HYPE for onchain options on Hypersurface). This keeps the HL sleeve focused on what HIP-3 uniquely offers (24/7 onchain equities) and avoids duplicating crypto weight.
 
 HIP-3 stack: prices, liquidity ranking, period returns, portfolio ops (rebalance_check, quarterly_summary), live sync to PORTFOLIO-HYPERLIQUID.md, order preview, then opt-in execution (submit/cancel) gated by `HYPERLIQUID_ORDER_ENABLED` and private key, with runtime approval. Preview first; heartbeat never submits. Env: `HYPERLIQUID_ACCOUNT_ADDRESS`; optional `HYPERLIQUID_ORDER_ENABLED` and `HYPERLIQUID_PRIVATE_KEY`. **Test balance read:** `bun run hyperliquid:balance` (prints account value, withdrawable, and positions; requires `HYPERLIQUID_ACCOUNT_ADDRESS` in `.env`). [PRD-HYPERLIQUID-PORTFOLIO.md](docs/PRD-HYPERLIQUID-PORTFOLIO.md), [ULTIMATE-TEST-QUERIES.md](docs/ULTIMATE-TEST-QUERIES.md) (Queries 8, 8b–8e).
+
+### Why Hyperliquid is in Dexter
+
+We integrated Hyperliquid because the thesis in this repo is no longer just “what should I own?” It is also “which venue is structurally best for owning it?” Hyperliquid gives Dexter a second execution surface: **24/7 on-chain exposure to tokenized equities, commodities, and indices**. That unlocks a sleeve the tastytrade account cannot represent in the same way. Instead of collapsing everything into one broker account, Dexter can keep the off-chain book and the on-chain book separate, then reason about both as parts of one portfolio architecture.
+
+That separation is the whole point. tastytrade is the off-chain sleeve for names that should live in a conventional broker workflow, especially the options-heavy and non-HL universe. Hyperliquid is the on-chain sleeve for **HIP-3 assets**: tokenized stocks, macro proxies, and other markets the repo wants to treat as their own 24/7 portfolio. The integration exists so Dexter can build, monitor, and rebalance that sleeve as a first-class portfolio instead of treating Hyperliquid as a price feed or a one-off execution toy.
+
+Practically, Hyperliquid unlocks five things. First, **live public account reads** from a wallet address: account value, withdrawable balance, and normalized positions without needing a private key. Second, **live-to-file portfolio sync** into `PORTFOLIO-HYPERLIQUID.md`, so reports and rebalance checks can run on current holdings instead of stale markdown. Third, **deterministic portfolio operations**: rebalance checks, target validation, and quarterly summary payloads that can be fed into performance history. Fourth, **execution previews with market resolution**: drift actions are converted into concrete order intents with estimated sizes, liquidity warnings, and policy checks. Fifth, **opt-in live execution**: only when the user enables it and explicitly confirms.
+
+The reason this matters in Dexter is the same reason tastytrade matters, but for a different venue. Hyperliquid is how the repo expresses the on-chain part of the thesis in an operational way. It lets Dexter answer not just “what are the best on-chain equities?” but “how far is the sleeve from target, what should be trimmed or added, what size would those orders be, and is the move safe enough to show for approval?”
+
+### How the integration works
+
+The Hyperliquid integration is also split into layers, but it is intentionally different from tastytrade because the read path is public and the execution path is separate.
+
+1. **Public account-state layer.** `src/tools/hyperliquid/hyperliquid-account-api.ts` reads `clearinghouseState` from Hyperliquid using only `HYPERLIQUID_ACCOUNT_ADDRESS`. It normalizes positions into account value, withdrawable balance, symbol, size, value, and weight. That is why live portfolio reads and sync do not need a private key.
+2. **Portfolio-sync layer.** `src/tools/hyperliquid/hyperliquid-sync-portfolio-tool.ts` converts live holdings into `PORTFOLIO-HYPERLIQUID.md` format. This is the bridge from raw on-chain positions to the rest of Dexter’s portfolio machinery. Once synced, the HL sleeve can be handled like a real managed portfolio, not just a wallet snapshot.
+3. **Deterministic ops layer.** `src/tools/hyperliquid/hyperliquid-portfolio-ops-tool.ts` is the portfolio brain for the HL sleeve. It reads the current sleeve from `PORTFOLIO-HYPERLIQUID.md`, reads targets from `HEARTBEAT.md` or `SOUL-HL.md`, computes drift, raises concentration alerts, suggests trim/add actions, validates target tables, and builds quarterly summary payloads. This is where Hyperliquid stops being “an exchange” and becomes “a portfolio that can be operated.”
+4. **Market-data and mapping layer.** `src/tools/hyperliquid/hl-fd-mapping.ts` maps HL symbols to Financial Datasets proxies so Dexter can compute returns and reports for tokenized equities, commodities, and indices. Hyperliquid-native prices and liquidity tools cover cases where direct FD mapping is unavailable or incomplete, especially for HL-native or pre-IPO names.
+5. **Preview-first execution layer.** `src/tools/hyperliquid/hyperliquid-order-preview-tool.ts` takes rebalance actions and turns them into reviewable order intents. It resolves underlyings to actual HL markets, estimates size from `aum_hl`, adds warnings for unresolved or illiquid symbols, and validates intents against `~/.dexter/hl-execution-policy.json`. Only after that do `hyperliquid_submit_order` and `hyperliquid_cancel_order` come into play, and those require `HYPERLIQUID_ORDER_ENABLED=true`, `HYPERLIQUID_PRIVATE_KEY`, and explicit runtime approval. The signing and submission logic lives in `src/tools/hyperliquid/hyperliquid-execution-api.ts`.
+
+The key design choice is that **execution is downstream of portfolio logic**. Dexter does not jump from “here are some prices” to “send an order.” The intended flow is: sync live holdings, compute drift against target, preview intents, inspect warnings and policy violations, then optionally execute. That makes Hyperliquid fit the same operating model as the rest of the repo: thesis first, portfolio second, execution last.
+
+And just like with tastytrade, the Hyperliquid integration is opinionated about venue boundaries. The HL sleeve is for **HIP-3 on-chain equities and market proxies**, not for the core crypto stack and not for duplicated exposure that already belongs in the off-chain sleeve. That is why the repo keeps `PORTFOLIO-HYPERLIQUID.md` separate, maps its symbols separately, and uses dedicated deterministic ops instead of folding everything into one generic portfolio abstraction.
 
 ---
 

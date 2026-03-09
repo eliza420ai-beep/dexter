@@ -8,7 +8,7 @@
  */
 
 import type { AihfRunRequest, AihfRunResult, AihfSseEvent, AihfSseEventType } from './types.js';
-import { getDefaultAihfGraph } from './aihf-graph.js';
+import { getAihfGraph, type AnalystPreset } from './aihf-graph.js';
 
 const DEFAULT_TIMEOUT_MS = 180_000; // 3 minutes
 
@@ -21,6 +21,7 @@ export interface CallAihfOptions {
   startDate?: string | null;
   endDate?: string;
   initialCash?: number;
+  analystPreset?: AnalystPreset;
   onProgress?: (message: string) => void;
 }
 
@@ -30,7 +31,8 @@ export async function callAIHF(opts: CallAihfOptions): Promise<AihfRunResult> {
     throw new AihfError('AIHF_API_URL is not configured.');
   }
 
-  const graph = getDefaultAihfGraph();
+  const analystPreset = opts.analystPreset ?? 'full';
+  const graph = getAihfGraph(analystPreset);
   const today = new Date().toISOString().slice(0, 10);
 
   const payload: AihfRunRequest = {
@@ -45,7 +47,9 @@ export async function callAIHF(opts: CallAihfOptions): Promise<AihfRunResult> {
 
   const url = `${apiUrl.replace(/\/$/, '')}/hedge-fund/run`;
   const timeoutMs = getTimeoutMs();
-  opts.onProgress?.(`Starting AIHF second opinion for ${opts.tickers.length} tickers...`);
+  opts.onProgress?.(
+    `Starting AIHF second opinion for ${opts.tickers.length} tickers with the ${analystPreset} analyst set...`,
+  );
 
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
@@ -158,7 +162,7 @@ function formatAihfProgressEvent(
     const data = evt.data as { status?: string; tickers?: string[] } | string;
     if (typeof data === 'object' && data !== null) {
       const runTickers = Array.isArray(data.tickers) ? data.tickers.length : tickers.length;
-      return `AIHF graph running for ${runTickers} tickers across 18 analyst personas...`;
+      return `AIHF graph running for ${runTickers} tickers...`;
     }
     return 'AIHF graph started...';
   }

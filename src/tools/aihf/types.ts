@@ -117,6 +117,36 @@ export interface ConflictEntry {
   aihf_stance: string;
   aihf_confidence: number;
   note: string;
+  analyst_split?: AnalystSplitSummary;
+}
+
+export interface SoftDisagreementEntry {
+  ticker: string;
+  sleeve: 'default' | 'hyperliquid';
+  dexter_stance: string;
+  aihf_stance: string;
+  aihf_confidence: number;
+  score: number;
+  note: string;
+  analyst_split?: AnalystSplitSummary;
+}
+
+export interface AnalystView {
+  analyst_id: string;
+  analyst_name: string;
+  signal: 'bullish' | 'bearish' | 'neutral';
+  confidence: number;
+  reasoning: string;
+}
+
+export interface AnalystSplitSummary {
+  bullish_count: number;
+  bearish_count: number;
+  neutral_count: number;
+  top_bullish: AnalystView[];
+  top_bearish: AnalystView[];
+  top_neutral: AnalystView[];
+  narrative: string;
 }
 
 export interface ExcludedInterestingEntry {
@@ -129,13 +159,39 @@ export interface ExcludedInterestingEntry {
 
 export interface DoubleCheckSummary {
   included_agreement_pct: number;
+  weighted_included_agreement_pct: number;
+  included_count: number;
+  included_validated_count: number;
+  included_agreement_count: number;
   conflict_count: number;
+  soft_disagreement_count: number;
   excluded_interesting_count: number;
+  by_sleeve: {
+    default: {
+      included_count: number;
+      included_validated_count: number;
+      included_agreement_count: number;
+      included_agreement_pct: number;
+      weighted_included_agreement_pct: number;
+      conflict_count: number;
+      soft_disagreement_count: number;
+    };
+    hyperliquid: {
+      included_count: number;
+      included_validated_count: number;
+      included_agreement_count: number;
+      included_agreement_pct: number;
+      weighted_included_agreement_pct: number;
+      conflict_count: number;
+      soft_disagreement_count: number;
+    };
+  };
 }
 
 export interface DoubleCheckResult {
   summary: DoubleCheckSummary;
   conflicts: ConflictEntry[];
+  soft_disagreements: SoftDisagreementEntry[];
   excluded_interesting: ExcludedInterestingEntry[];
   aihf_raw_meta: {
     tickers_validated: number;
