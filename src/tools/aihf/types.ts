@@ -17,8 +17,9 @@ export interface AihfGraphNode {
 }
 
 export interface AihfGraphEdge {
-  from: string;
-  to: string;
+  id: string;
+  source: string;
+  target: string;
 }
 
 export interface AihfGraph {

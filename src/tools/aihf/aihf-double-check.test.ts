@@ -30,7 +30,7 @@ describe('aihf-graph', () => {
     const graph = getDefaultAihfGraph();
     const pm = getPMNodeId();
     for (const id of getAnalystIds()) {
-      expect(graph.edges.some((e) => e.from === id && e.to === pm)).toBe(true);
+      expect(graph.edges.some((e) => e.source === id && e.target === pm)).toBe(true);
     }
   });
 

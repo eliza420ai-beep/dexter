@@ -48,8 +48,9 @@ export function getDefaultAihfGraph(): AihfGraph {
   ];
 
   const edges: AihfGraphEdge[] = ANALYST_IDS.map((id) => ({
-    from: id,
-    to: PM_NODE_ID,
+    id: `${id}->${PM_NODE_ID}`,
+    source: id,
+    target: PM_NODE_ID,
   }));
 
   return { nodes, edges };
