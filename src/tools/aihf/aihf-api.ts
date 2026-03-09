@@ -105,6 +105,7 @@ export async function parseSseStream(response: Response, tickers: string[]): Pro
 
       for (const evt of events.parsed) {
         if (evt.event === 'complete') {
+          debugAihfPayload('complete_event_raw', evt.data);
           return parseCompletePayload(evt.data, tickers);
         }
         if (evt.event === 'error') {
@@ -178,10 +179,22 @@ function parseCompletePayload(data: unknown, tickers: string[]): AihfRunResult {
   }
 
   const obj = data as Record<string, unknown>;
+  debugAihfPayload('complete_event_keys', Object.keys(obj));
 
-  const decisions = (obj.decisions ?? {}) as AihfRunResult['decisions'];
-  const analyst_signals = (obj.analyst_signals ?? {}) as AihfRunResult['analyst_signals'];
-  const current_prices = (obj.current_prices ?? {}) as AihfRunResult['current_prices'];
+  // AIHF backend currently emits complete events as:
+  // { type: "complete", data: { decisions, analyst_signals, current_prices }, timestamp }
+  // but we also support the direct flat shape for compatibility.
+  const payload =
+    typeof obj.data === 'object' && obj.data !== null ? (obj.data as Record<string, unknown>) : obj;
+
+  const decisions = (payload.decisions ?? {}) as AihfRunResult['decisions'];
+  const analyst_signals = (payload.analyst_signals ?? {}) as AihfRunResult['analyst_signals'];
+  const current_prices = (payload.current_prices ?? {}) as AihfRunResult['current_prices'];
+  debugAihfPayload('complete_event_decision_keys', Object.keys(decisions ?? {}));
+  if (Object.keys(decisions ?? {}).length === 0) {
+    // Helps isolate backend shape/content mismatches when stream completes but no parsed decisions exist.
+    debugAihfPayload('complete_event_empty_decisions_payload', payload);
+  }
 
   return { decisions, analyst_signals, current_prices };
 }
@@ -214,5 +227,15 @@ export class AihfError extends Error {
   ) {
     super(message);
     this.name = 'AihfError';
+  }
+}
+
+function debugAihfPayload(label: string, value: unknown): void {
+  if (process.env.AIHF_DEBUG_PAYLOAD !== '1') return;
+  try {
+    const serialized = typeof value === 'string' ? value : JSON.stringify(value);
+    console.error(`[aihf-debug] ${label}: ${serialized}`);
+  } catch {
+    console.error(`[aihf-debug] ${label}: [unserializable]`);
   }
 }

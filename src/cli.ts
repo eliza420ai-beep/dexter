@@ -311,6 +311,34 @@ Output:
 4. One sentence that captures the tension between on-chain optionality and regime risk
 
 Voice: structural thinking, precise numbers, blunt assessment. No hype. Output markdown ready for Claude polish or direct publish.`,
+    '/substack-draft': `Run the full Substack draft pipeline in one flow:
+1) Ensure we have current portfolio context. If missing, tell me to run /suggest first and stop.
+2) Run AIHF second opinion with aihf_double_check action=run (read from .dexter portfolio files if not provided).
+3) Invoke skill "essay-synthesis" and draft a 2,000–5,000 word system essay in ikigaistudio voice.
+4) Use this source priority: latest QUARTERLY-REPORT-YYYY-QN.md, then latest AIHF-DOUBLE-CHECK-YYYY-MM-DD.md, then SOUL.md.
+5) Enforce quality gates before finalizing:
+   - required sections: Hook, Thesis map, Committee challenge, Decision layer, Risk + invalidation
+   - at least 3 precise numeric claims in first 500 words
+   - no placeholders ([TODO], TBD, insert chart)
+   - word count 2,000–5,000
+   If any gate fails, do exactly one rewrite pass and re-check.
+6) Save with save_report to ESSAY-DRAFT-YYYY-QN.md including Substack-ready frontmatter:
+   title, subtitle, tags, thesis_bullet, publish_status:draft.
+7) Return the saved filename and a 5-bullet editorial checklist for final human polish before publish.`,
+    '/substack-draft-hl': `Run a Hyperliquid-first Substack draft pipeline:
+1) Ensure .dexter/PORTFOLIO-HYPERLIQUID.md exists. If missing, tell me to run /suggest-hl first and stop.
+2) Run AIHF second opinion with aihf_double_check action=run using current included/excluded context.
+3) Invoke skill "essay-synthesis" but bias thread selection toward on-chain equities (HIP-3), tokenized stocks thesis, and on-chain vs off-chain performance tension.
+4) Source priority is mandatory: QUARTERLY-REPORT-HL-YYYY-QN.md first, then AIHF-DOUBLE-CHECK-YYYY-MM-DD.md, then SOUL-HL.md/SOUL.md.
+5) Enforce quality gates before finalizing:
+   - required sections: Hook, Thesis map, Committee challenge, Decision layer, Risk + invalidation
+   - at least 3 precise numeric claims in first 500 words
+   - no placeholders ([TODO], TBD, insert chart)
+   - word count 2,000–5,000
+   If any gate fails, do exactly one rewrite pass and re-check.
+6) Save with save_report to ESSAY-DRAFT-HL-YYYY-QN.md with Substack-ready frontmatter:
+   title, subtitle, tags, thesis_bullet, publish_status:draft.
+7) Return saved filename and a concise publish checklist tailored to the HL thesis.`,
     '/theta-risk': `Analyze my live tastytrade options book. Use tastytrade_position_risk and tell me:
 - my portfolio theta and delta
 - which short options are challenged
