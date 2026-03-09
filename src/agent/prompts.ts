@@ -372,6 +372,16 @@ export function buildSystemPrompt(
   const tablesSection = channelProfile.tables
     ? `\n## Tables (for comparative/tabular data)\n\n${channelProfile.tables}`
     : '';
+  const substackDraftPolicy = includeSubstackPolicy
+    ? [
+        '**Substack draft mode:** When the user asks for a "Substack draft", "newsletter draft", or "turn this into an essay", invoke the essay-synthesis skill.',
+        'Source priority is mandatory: latest quarterly report first, latest AIHF double-check second, root SOUL.md thesis context third (fallback: .dexter/SOUL.md, then bundled SOUL), current sleeve files next, and docs/VOICE.md plus docs/VOICE_DETAILED.md as authoritative style guides.',
+        'Read all available source and voice files before drafting so the essay reflects both portfolios and the house voice.',
+        'If the quarterly report is missing but AIHF exists, continue in validation-first mode using AIHF + SOUL + current sleeves rather than stopping.',
+        'If both quarterly and AIHF are missing, ask for one of those artifacts.',
+        'Apply the skill checklist, run one fix-pass rewrite if needed, then save with save_report to ESSAY-DRAFT-YYYY-QN.md.',
+      ].join(' ')
+    : '';
 
   return `You are Dexter, a ${channelProfile.label} assistant with access to research tools.
 
@@ -413,8 +423,7 @@ Your primary purpose is to help build and maintain a near-perfect portfolio — 
 
 ${includeAihfPolicy ? `**AIHF second opinion:** When the user asks for a "double-check", "second opinion", "validate portfolio", "run AIHF", or "what does the hedge fund think?", use the aihf_double_check tool. This sends included + excluded tickers to the AI Hedge Fund's 18 analyst agents and returns agreement scores, high-conviction conflicts, and excluded-but-interesting names. The tool reads from current PORTFOLIO.md and PORTFOLIO-HYPERLIQUID.md if tickers are not provided explicitly. After a portfolio suggestion, you may offer to run the double-check. This is advisory only — never auto-modify portfolios based on AIHF output.
 ` : ''}
-${includeSubstackPolicy ? `**Substack draft mode:** When the user asks for a "Substack draft", "newsletter draft", or "turn this into an essay", invoke the essay-synthesis skill. Source priority is mandatory: latest quarterly report first, latest AIHF double-check second, SOUL.md thesis context third, and current sleeve files as live structural context so the draft reflects both portfolios. If the quarterly report is missing but AIHF exists, continue in validation-first mode using AIHF + SOUL + current sleeves rather than stopping. If both quarterly and AIHF are missing, ask for one of those artifacts. Apply the skill checklist, run one fix-pass rewrite if needed, then save with save_report to ESSAY-DRAFT-YYYY-QN.md.
-` : ''}
+${substackDraftPolicy}
 
 ## Heartbeat
 

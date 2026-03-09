@@ -1,6 +1,6 @@
 ---
 name: essay-synthesis
-description: Synthesizes Dexter's quarterly reports, AIHF double-check reports, and performance history into a Substack-ready essay in the ikigaistudio voice. Triggers when the user asks for "write an essay", "Substack draft", "essay from the quarterly report", "newsletter draft", "turn the report into an essay", or "write up this quarter."
+description: Synthesizes Dexter's quarterly reports, AIHF double-check reports, performance history, and house voice guides into a Substack-ready essay in the ikigaistudio voice. Triggers when the user asks for "write an essay", "Substack draft", "essay from the quarterly report", "newsletter draft", "turn the report into an essay", or "write up this quarter."
 ---
 
 # Essay Synthesis Skill
@@ -20,7 +20,12 @@ Essay Synthesis Progress:
 
 ## Step 1: Gather Source Material
 
-Read all available source reports from `.dexter/`.
+Read all available source reports from `.dexter/`, plus the root thesis and voice files.
+
+Important tool rule:
+- `.dexter` is a directory. Do not call `ReadFile` on `.dexter` itself.
+- First enumerate matching files in `.dexter/`, then read the specific markdown files you need.
+- Only call `ReadFile` on concrete file paths such as `.dexter/QUARTERLY-REPORT-2026-Q1.md`.
 
 You need at minimum one of:
 - a quarterly report, or
@@ -31,8 +36,15 @@ You need at minimum one of:
 Use this exact priority order when multiple files exist:
 1. Latest quarterly report for the requested period (`QUARTERLY-REPORT-YYYY-QN.md`)
 2. Latest AIHF validation report for the same session/period (`AIHF-DOUBLE-CHECK-YYYY-MM-DD.md`)
-3. `SOUL.md` thesis context (`.dexter/SOUL.md` first, bundled fallback second)
+3. Root `SOUL.md` thesis context (`SOUL.md` first, `.dexter/SOUL.md` second, bundled fallback third)
 4. Current sleeve files for live context (`PORTFOLIO.md`, `PORTFOLIO-HYPERLIQUID.md`) so the essay always reflects both sleeves' current structure and weights
+5. `docs/VOICE.md`
+6. `docs/VOICE_DETAILED.md`
+
+When discovering `.dexter` sources:
+- Enumerate candidate files by pattern rather than reading the directory path
+- Pick the latest matching quarterly and AIHF files
+- Read only those resolved file paths
 
 If any input is missing:
 - Missing quarterly report but AIHF report exists: continue in **validation-first mode**. Use the AIHF report plus current sleeves and SOUL to write a pre-performance essay. Explicitly note that the quarterly performance report is not yet available, so attribution/performance claims are limited.
@@ -56,9 +68,9 @@ Read the most recent `AIHF-DOUBLE-CHECK-YYYY-MM-DD.md`.
 **Extract:** agreement percentage, high-conviction conflicts, excluded-but-interesting names, meta (how many tickers validated). The AIHF perspective adds a "second opinion" thread to the essay — where the 18-agent committee agreed and where it pushed back.
 
 ### 1.4 SOUL.md (Identity & Thesis)
-Read `.dexter/SOUL.md` or the bundled `SOUL.md`.
+Read root `SOUL.md` first. If it is missing, try `.dexter/SOUL.md`. If both are missing, use the bundled fallback.
 
-**Extract:** current thesis layers, conviction tiers, regime framework. This is the thesis the essay measures against.
+**Extract:** current thesis layers, conviction tiers, regime framework, two-sleeve architecture, zero-overlap rule, "different jobs, same system" logic, gold-as-signal-not-center-of-gravity, and second-system calibration rules. This is the thesis the essay measures against.
 
 ### 1.5 Current Sleeves (Always read when available)
 Read the current `PORTFOLIO.md` and `PORTFOLIO-HYPERLIQUID.md` whenever they exist.
@@ -66,7 +78,9 @@ Read the current `PORTFOLIO.md` and `PORTFOLIO-HYPERLIQUID.md` whenever they exi
 **Extract:** current weights, overlap rules, top positions, ballast names, sleeve split, and the "Not in the portfolio — and why" reasoning. Use these as the structural evidence layer. When quarterly attribution exists, use the sleeves to keep the essay aligned with the current book. When quarterly attribution is missing, use them as the main structure source.
 
 ### 1.6 VOICE.md and VOICE_DETAILED.md
-These are already loaded into your system prompt. Use them as the authoritative style guide.
+Read `docs/VOICE.md` and `docs/VOICE_DETAILED.md` explicitly for every essay invocation, even if related voice guidance is already present in the system prompt.
+
+**Extract:** essay mode selection, pronoun guidance, paragraph length limits, opening/closing patterns, forbidden words, rhetorical patterns, and the required `"Sixty-seven."` ending.
 
 ## Step 2: Identify Narrative Threads
 
@@ -102,9 +116,9 @@ Use **"Thesis → Evidence → System mapping → Implication → Close"** struc
 Use **"Current book → Committee challenge → Thesis defense → Decision layer → Invalidation → Close"** structure:
 
 1. **Opening hook** — One sharp sentence about the current book or the committee disagreement.
-2. **Thesis map** — What the current sleeves are actually betting on, with precise weights and category structure.
+2. **Thesis map** — What the current sleeves are actually betting on, with precise weights and category structure. Explicitly use the `SOUL.md` two-sleeve architecture: default / tastytrade sleeve = underpriced bottlenecks, Hyperliquid sleeve = on-chain direct leaders + tokenization rails, zero overlap where possible.
 3. **Committee challenge** — What AIHF rejected, with agreement %, conflict count, and the most important disagreements.
-4. **Decision layer** — What stays, what gets questioned, what still needs real-world performance evidence.
+4. **Decision layer** — What stays, what gets questioned, what still needs real-world performance evidence. Use `SOUL.md` calibration logic explicitly: second-system disagreement affects sizing and timing first, not automatic thesis invalidation. Use gold strength as a regime signal, not a portfolio identity.
 5. **Risk + invalidation** — What would prove the current book wrong before the quarterly report arrives.
 6. **Close** — One sharp sentence before "Sixty-seven."
 

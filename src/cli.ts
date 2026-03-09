@@ -259,6 +259,67 @@ export async function runCli() {
     errorText.setText(message ? theme.error(`Error: ${message}`) : '');
   };
 
+  const WRITE_ESSAY_SHORTCUT = [
+    'Write a Substack-ready essay draft from existing research artifacts.',
+    '',
+    'Source priority is mandatory:',
+    '1) latest .dexter/QUARTERLY-REPORT-YYYY-QN.md',
+    '2) latest .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md',
+    '3) root SOUL.md (fallback: .dexter/SOUL.md, then bundled SOUL)',
+    '4) current .dexter/PORTFOLIO.md',
+    '5) current .dexter/PORTFOLIO-HYPERLIQUID.md',
+    '6) docs/VOICE.md',
+    '7) docs/VOICE_DETAILED.md so the draft follows ikigaistudio voice exactly',
+    '',
+    'Invoke skill "essay-synthesis" and draft 2,000-5,000 words in ikigaistudio voice.',
+    'Read all source and voice files before drafting.',
+    'Prefer system essay mode unless the user explicitly asks for direct address.',
+    'Fallback rule:',
+    '- if quarterly report exists, use normal quarterly-first essay mode',
+    '- if quarterly is missing but AIHF exists, write a validation-first draft from AIHF + SOUL + current sleeves instead of stopping',
+    '- if both quarterly and AIHF are missing, stop and say which artifact is needed',
+    '- best-quality two-sleeve fund essay: run both /quarterly and /hl-report first so the draft has realized performance for both sleeves, not just live structure for Hyperliquid',
+    'Quality gates before finalizing:',
+    '- required sections: Hook, Thesis map, Committee challenge, Decision layer, Risk + invalidation',
+    '- at least 3 precise numeric claims in first 500 words',
+    '- no placeholders ([TODO], TBD, insert chart)',
+    '- word count 2,000-5,000',
+    'If any gate fails, do exactly one rewrite pass and re-check.',
+    '',
+    'Save with save_report to ESSAY-DRAFT-YYYY-QN.md with frontmatter:',
+    'title, subtitle, tags, thesis_bullet, publish_status:draft.',
+    'Return saved filename plus a 5-bullet editorial polish checklist.',
+  ].join('\n');
+
+  const FULL_LOOP_SHORTCUT = [
+    'Run the full autoresearch pipeline end-to-end:',
+    '',
+    'Step 1 - PORTFOLIOS: Build and save two thesis-aligned portfolios',
+    '  (Tastytrade sleeve + Hyperliquid sleeve). Use the portfolio tool',
+    '  twice to persist both. Include "Not in the portfolio" sections.',
+    '',
+    'Step 2 - AIHF SECOND OPINION: Run aihf_double_check with action=run.',
+    '  Read tickers from the portfolios just saved. Wait for the full',
+    '  analysis. The action memo will auto-append.',
+    '',
+    'Step 3 - ESSAY DRAFT: Invoke the essay-synthesis skill. Source priority:',
+    '  latest QUARTERLY-REPORT, then AIHF-DOUBLE-CHECK report from step 2,',
+    '  then root SOUL.md, both live sleeve files, and docs/VOICE.md +',
+    '  docs/VOICE_DETAILED.md. Read all of them before drafting. If the',
+    '  quarterly report is missing, fall back to AIHF + SOUL + current sleeves',
+    '  and still draft 2,000-5,000 words in ikigaistudio voice. Best-quality',
+    '  two-sleeve fund essay requires both /quarterly and /hl-report first.',
+    '',
+    'Step 4 - QUALITY GATES: Required sections (Hook, Thesis map,',
+    '  Committee challenge, Decision layer, Risk + invalidation).',
+    '  At least 3 numeric claims in first 500 words. No placeholders.',
+    '  If any gate fails, do one rewrite pass.',
+    '',
+    'Step 5 - SAVE: save_report to ESSAY-DRAFT-YYYY-QN.md with',
+    '  Substack-ready frontmatter. Return filename + 5-bullet',
+    '  editorial checklist.',
+  ].join('\n');
+
   const QUERY_SHORTCUTS: Record<string, string> = {
     '/suggest': `Suggest and save two sleeves only (no AIHF, no essay): tastytrade (portfolio_id=default) and hyperliquid (portfolio_id=hyperliquid). Keep zero overlap, include target weights + concise rationale, and include "Not in the portfolio — and why" for each sleeve. Save both files via portfolio tool.`,
     '/suggest-tastytrade': `Suggest and save only the tastytrade sleeve (portfolio_id=default). Keep to non-Hyperliquid thesis names, include target weights + concise rationale, and include "Not in the portfolio — and why". Save via portfolio tool.`,
@@ -269,55 +330,8 @@ Use aihf_double_check with action=run.
 - Return agreement summary, high-conviction conflicts, and excluded-but-interesting names
 - Confirm the saved report filename (.dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md)
 - Keep this advisory only; do not auto-modify portfolios`,
-    '/write-essay': `Write a Substack-ready essay draft from existing research artifacts.
-
-Source priority is mandatory:
-1) latest .dexter/QUARTERLY-REPORT-YYYY-QN.md
-2) latest .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md
-3) .dexter/SOUL.md (or bundled SOUL fallback)
-4) current .dexter/PORTFOLIO.md and .dexter/PORTFOLIO-HYPERLIQUID.md so the essay reflects both sleeves' live structure
-
-Invoke skill "essay-synthesis" and draft 2,000–5,000 words in ikigaistudio voice.
-Fallback rule:
-- if quarterly report exists, use normal quarterly-first essay mode
-- if quarterly is missing but AIHF exists, write a validation-first draft from AIHF + SOUL + current sleeves instead of stopping
-- if both quarterly and AIHF are missing, stop and say which artifact is needed
-- best-quality two-sleeve fund essay: run both /quarterly and /hl-report first so the draft has realized performance for both sleeves, not just live structure for Hyperliquid
-Quality gates before finalizing:
-- required sections: Hook, Thesis map, Committee challenge, Decision layer, Risk + invalidation
-- at least 3 precise numeric claims in first 500 words
-- no placeholders ([TODO], TBD, insert chart)
-- word count 2,000–5,000
-If any gate fails, do exactly one rewrite pass and re-check.
-
-Save with save_report to ESSAY-DRAFT-YYYY-QN.md with frontmatter:
-title, subtitle, tags, thesis_bullet, publish_status:draft.
-Return saved filename plus a 5-bullet editorial polish checklist.`,
-    '/full-loop': `Run the full autoresearch pipeline end-to-end:
-
-Step 1 — PORTFOLIOS: Build and save two thesis-aligned portfolios
-  (Tastytrade sleeve + Hyperliquid sleeve). Use the portfolio tool
-  twice to persist both. Include "Not in the portfolio" sections.
-
-Step 2 — AIHF SECOND OPINION: Run aihf_double_check with action=run.
-  Read tickers from the portfolios just saved. Wait for the full
-  analysis. The action memo will auto-append.
-
-Step 3 — ESSAY DRAFT: Invoke the essay-synthesis skill. Source priority:
-  latest QUARTERLY-REPORT, then AIHF-DOUBLE-CHECK report from step 2,
-  then SOUL.md, plus both live sleeve files. If the quarterly report is
-  missing, fall back to AIHF + SOUL + current sleeves and still draft
-  2,000-5,000 words in ikigaistudio voice. Best-quality two-sleeve fund
-  essay requires both /quarterly and /hl-report first.
-
-Step 4 — QUALITY GATES: Required sections (Hook, Thesis map,
-  Committee challenge, Decision layer, Risk + invalidation).
-  At least 3 numeric claims in first 500 words. No placeholders.
-  If any gate fails, do one rewrite pass.
-
-Step 5 — SAVE: save_report to ESSAY-DRAFT-YYYY-QN.md with
-  Substack-ready frontmatter. Return filename + 5-bullet
-  editorial checklist.`,
+    '/write-essay': WRITE_ESSAY_SHORTCUT,
+    '/full-loop': FULL_LOOP_SHORTCUT,
     '/weekly': `Write a weekly performance report for my portfolio. Use .dexter/PORTFOLIO.md for my holdings (or the portfolio you suggested last time). For each position, fetch the price change over the past 7 days (start_date and end_date). Also fetch the 7-day performance for:
 - BTC-USD (Bitcoin)
 - GLD (Gold ETF)
