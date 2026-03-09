@@ -55,6 +55,8 @@ export interface AgentConfig {
   sessionApprovedTools?: Set<string>;
   /** Enable/disable persistent memory integration for this run */
   memoryEnabled?: boolean;
+  /** Tool/system prompt profile (full default, suggest for slimmer portfolio path) */
+  toolProfile?: 'full' | 'suggest';
 }
 
 /**

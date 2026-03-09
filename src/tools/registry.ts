@@ -103,6 +103,17 @@ export interface RegisteredTool {
   description: string;
 }
 
+export type ToolProfile = 'full' | 'suggest';
+
+const SUGGEST_TOOLS = new Set<string>([
+  'financial_search',
+  'financial_metrics',
+  'portfolio',
+  'hyperliquid_prices',
+  'web_search',
+  'save_report',
+]);
+
 /**
  * Get all registered tools with their descriptions.
  * Conditionally includes tools based on environment configuration.
@@ -110,7 +121,7 @@ export interface RegisteredTool {
  * @param model - The model name (needed for tools that require model-specific configuration)
  * @returns Array of registered tools
  */
-export function getToolRegistry(model: string): RegisteredTool[] {
+export function getToolRegistry(model: string, profile: ToolProfile = 'full'): RegisteredTool[] {
   const tools: RegisteredTool[] = [
     {
       name: 'financial_search',
@@ -312,6 +323,10 @@ export function getToolRegistry(model: string): RegisteredTool[] {
     });
   }
 
+  if (profile === 'suggest') {
+    return tools.filter((tool) => SUGGEST_TOOLS.has(tool.name));
+  }
+
   return tools;
 }
 
@@ -321,8 +336,8 @@ export function getToolRegistry(model: string): RegisteredTool[] {
  * @param model - The model name
  * @returns Array of tool instances
  */
-export function getTools(model: string): StructuredToolInterface[] {
-  return getToolRegistry(model).map((t) => t.tool);
+export function getTools(model: string, profile: ToolProfile = 'full'): StructuredToolInterface[] {
+  return getToolRegistry(model, profile).map((t) => t.tool);
 }
 
 /**
@@ -332,8 +347,8 @@ export function getTools(model: string): StructuredToolInterface[] {
  * @param model - The model name
  * @returns Formatted string with all tool descriptions
  */
-export function buildToolDescriptions(model: string): string {
-  return getToolRegistry(model)
+export function buildToolDescriptions(model: string, profile: ToolProfile = 'full'): string {
+  return getToolRegistry(model, profile)
     .map((t) => `### ${t.name}\n\n${t.description}`)
     .join('\n\n');
 }

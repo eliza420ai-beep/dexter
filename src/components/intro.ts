@@ -57,18 +57,21 @@ export class IntroComponent extends Container {
     this.addChild(this.modelText);
     this.addChild(
       new Text(
-        `${theme.muted('Try: ')}${theme.primary('/suggest')}${theme.muted(' (portfolio) · ')}${theme.primary(
-          '/suggest-hl',
-        )}${theme.muted(' (on-chain) · ')}${theme.primary('/options')}${theme.muted(' (tastytrade thesis) · ')}${theme.primary('/hypersurface')}${theme.muted(' (Hypersurface)')}`,
+        `${theme.muted('Try: ')}${theme.primary('/suggest')}${theme.muted(' · ')}${theme.primary('/double-check')}${theme.muted(' · ')}${theme.primary('/write-essay')}${theme.muted(' · ')}${theme.primary('/full-loop')}`,
         0,
         0,
       ),
     );
     this.addChild(
       new Text(
-        `${theme.muted('Or: ')}${theme.primary('/weekly')}${theme.muted(' (rebalance) · ')}${theme.primary(
-          '/theta-scan',
-        )}${theme.muted(' (theta) · ')}${theme.primary('/theta-policy')}${theme.muted(' · ')}${theme.primary('/theta-help')}`,
+        `${theme.muted('Or: ')}${theme.primary('/weekly')}${theme.muted(' · ')}${theme.primary('/quarterly')}${theme.muted(' · ')}${theme.primary('/suggest-hl')}${theme.muted(' · ')}${theme.primary('/suggest-tastytrade')}`,
+        0,
+        0,
+      ),
+    );
+    this.addChild(
+      new Text(
+        `${theme.muted('Options: ')}${theme.primary('/options-hl')}${theme.muted(' · ')}${theme.primary('/options-tastytrade')}${theme.muted(' · aliases: /LFG /options /hypersurface')}`,
         0,
         0,
       ),

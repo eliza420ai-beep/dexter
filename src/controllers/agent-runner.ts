@@ -15,6 +15,11 @@ export interface RunQueryResult {
   answer: string;
 }
 
+export interface RunQueryOptions {
+  toolProfile?: AgentConfig['toolProfile'];
+  maxIterations?: AgentConfig['maxIterations'];
+}
+
 export class AgentRunnerController {
   private historyValue: HistoryItem[] = [];
   private workingStateValue: WorkingState = { status: 'idle' };
@@ -92,7 +97,7 @@ export class AgentRunnerController {
     this.emitChange();
   }
 
-  async runQuery(query: string): Promise<RunQueryResult | undefined> {
+  async runQuery(query: string, options: RunQueryOptions = {}): Promise<RunQueryResult | undefined> {
     this.abortController = new AbortController();
     let finalAnswer: string | undefined;
 
@@ -114,6 +119,7 @@ export class AgentRunnerController {
     try {
       const agent = await Agent.create({
         ...this.agentConfig,
+        ...options,
         signal: this.abortController.signal,
         requestToolApproval: this.requestToolApproval,
         sessionApprovedTools: this.sessionApprovedTools,

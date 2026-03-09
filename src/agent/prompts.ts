@@ -1,4 +1,4 @@
-import { buildToolDescriptions } from '../tools/registry.js';
+import { buildToolDescriptions, type ToolProfile } from '../tools/registry.js';
 import { buildSkillMetadataSection, discoverSkills } from '../skills/index.js';
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -286,6 +286,7 @@ export function buildGroupSection(ctx: GroupContext): string {
  * @param thetaPolicySummary - Optional one-line THETA-POLICY summary (when tastytrade configured)
  * @param channel - Delivery channel (e.g., 'whatsapp', 'cli') — selects formatting profile
  * @param memoryContext - Optional persisted session memory from .dexter/memory/
+ * @param toolProfile - Tool/system prompt profile ('full' or 'suggest')
  */
 export function buildSystemPrompt(
   model: string,
@@ -297,22 +298,27 @@ export function buildSystemPrompt(
   channel?: string,
   groupContext?: GroupContext,
   memoryContext?: string | null,
+  toolProfile: ToolProfile = 'full',
 ): string {
-  const toolDescriptions = buildToolDescriptions(model);
-  const profile = getChannelProfile(channel);
+  const toolDescriptions = buildToolDescriptions(model, toolProfile);
+  const channelProfile = getChannelProfile(channel);
+  const includeSkillsSection = toolProfile !== 'suggest';
+  const includeAihfPolicy = toolProfile !== 'suggest';
+  const includeSubstackPolicy = toolProfile !== 'suggest';
+  const includeMemorySection = toolProfile !== 'suggest';
 
-  const behaviorBullets = profile.behavior.map(b => `- ${b}`).join('\n');
-  const formatBullets = profile.responseFormat.map(b => `- ${b}`).join('\n');
+  const behaviorBullets = channelProfile.behavior.map((b) => `- ${b}`).join('\n');
+  const formatBullets = channelProfile.responseFormat.map((b) => `- ${b}`).join('\n');
 
-  const tablesSection = profile.tables
-    ? `\n## Tables (for comparative/tabular data)\n\n${profile.tables}`
+  const tablesSection = channelProfile.tables
+    ? `\n## Tables (for comparative/tabular data)\n\n${channelProfile.tables}`
     : '';
 
-  return `You are Dexter, a ${profile.label} assistant with access to research tools.
+  return `You are Dexter, a ${channelProfile.label} assistant with access to research tools.
 
 Current date: ${getCurrentDate()}
 
-${profile.preamble}
+${channelProfile.preamble}
 
 ## Available Tools
 
@@ -330,9 +336,9 @@ ${toolDescriptions}
 - For factual questions about entities (companies, people, organizations), use tools to verify current state
 - Only respond directly for: conceptual definitions, stable historical facts, or conversational queries
 
-${buildSkillsSection()}
+${includeSkillsSection ? buildSkillsSection() : ''}
 
-${buildMemorySection(memoryContext ?? undefined)}
+${includeMemorySection ? buildMemorySection(memoryContext ?? undefined) : ''}
 
 ## North Star: Portfolio Builder
 
@@ -346,9 +352,10 @@ Your primary purpose is to help build and maintain a near-perfect portfolio — 
 
 **When you write a quarterly performance report:** MANDATORY — you MUST call save_report to persist it to .dexter/QUARTERLY-REPORT-YYYY-QN.md (e.g. QUARTERLY-REPORT-2026-Q1.md). The report is used for the essay workflow. For HL: if hyperliquid_sync_portfolio is available, call it with write_to_file=true first so the summary uses live holdings; then use hyperliquid_portfolio_ops with action=quarterly_summary and period (e.g. 2026-Q1), and pass the returned quarterly payload to performance_history record_quarter; or use hyperliquid_performance then record_quarter.
 
-**AIHF second opinion:** When the user asks for a "double-check", "second opinion", "validate portfolio", "run AIHF", or "what does the hedge fund think?", use the aihf_double_check tool. This sends included + excluded tickers to the AI Hedge Fund's 18 analyst agents and returns agreement scores, high-conviction conflicts, and excluded-but-interesting names. The tool reads from current PORTFOLIO.md and PORTFOLIO-HYPERLIQUID.md if tickers are not provided explicitly. After a portfolio suggestion, you may offer to run the double-check. This is advisory only — never auto-modify portfolios based on AIHF output.
-
-**Substack draft mode:** When the user asks for a "Substack draft", "newsletter draft", or "turn this into an essay", invoke the essay-synthesis skill. Source priority is mandatory: latest quarterly report first, latest AIHF double-check second, SOUL.md thesis context third. If AIHF report is missing, continue and include a brief validation-unavailable note. Apply the skill checklist, run one fix-pass rewrite if needed, then save with save_report to ESSAY-DRAFT-YYYY-QN.md.
+${includeAihfPolicy ? `**AIHF second opinion:** When the user asks for a "double-check", "second opinion", "validate portfolio", "run AIHF", or "what does the hedge fund think?", use the aihf_double_check tool. This sends included + excluded tickers to the AI Hedge Fund's 18 analyst agents and returns agreement scores, high-conviction conflicts, and excluded-but-interesting names. The tool reads from current PORTFOLIO.md and PORTFOLIO-HYPERLIQUID.md if tickers are not provided explicitly. After a portfolio suggestion, you may offer to run the double-check. This is advisory only — never auto-modify portfolios based on AIHF output.
+` : ''}
+${includeSubstackPolicy ? `**Substack draft mode:** When the user asks for a "Substack draft", "newsletter draft", or "turn this into an essay", invoke the essay-synthesis skill. Source priority is mandatory: latest quarterly report first, latest AIHF double-check second, SOUL.md thesis context third. If AIHF report is missing, continue and include a brief validation-unavailable note. Apply the skill checklist, run one fix-pass rewrite if needed, then save with save_report to ESSAY-DRAFT-YYYY-QN.md.
+` : ''}
 
 ## Heartbeat
 

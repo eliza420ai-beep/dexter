@@ -3,6 +3,7 @@ import { existsSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import type {
+  AgentConfig,
   ApprovalDecision,
   ToolEndEvent,
   ToolErrorEvent,
@@ -95,14 +96,14 @@ Explain:
 6. when to use /theta-roll
 7. when to use /theta-btc-weekly (BTC options via IBIT, weekly Friday expiry)
 8. when to use /hypersurface (Hypersurface advice only — optimal strike for BTC, I execute manually)
-9. when to use /options (suggest options to execute on tastytrade that fit SOUL.md thesis)
+9. when to use /options-tastytrade (suggest options to execute on tastytrade that fit SOUL.md thesis)
 
 Then tell me:
 - the safest order to run them in for a normal trading day
 - the safest order to run them in for a challenged short option
 - what I should do first given the environment status above
 
-Reference ~/.dexter/THETA-POLICY.md if it exists, and explicitly call out any missing setup before suggesting live broker workflows.`;
+Reference .dexter/THETA-POLICY.md if it exists, and explicitly call out any missing setup before suggesting live broker workflows.`;
 }
 
 function buildTastytradeStatusQuery(): string {
@@ -260,14 +261,72 @@ export async function runCli() {
   const QUERY_SHORTCUTS: Record<string, string> = {
     '/suggest': `Suggest and save TWO portfolios based on your Identity (SOUL.md). Use two portfolios — zero overlap.
 
-1. **Tastytrade sleeve** (portfolio_id=default): Only tickers NOT on Hyperliquid — e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG, ANET (SOUL layers 1–7). Do NOT include TSM or any ticker tradable on HIP-3. 10–20 positions, target weights, layer/tier. Save to ~/.dexter/PORTFOLIO.md with portfolio tool, action=update, portfolio_id=default.
+1. **Tastytrade sleeve** (portfolio_id=default): Only tickers NOT on Hyperliquid — e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG, ANET (SOUL layers 1–7). Do NOT include TSM or any ticker tradable on HIP-3. 10–20 positions, target weights, layer/tier. Save to .dexter/PORTFOLIO.md with portfolio tool, action=update, portfolio_id=default.
 
-2. **Hyperliquid sleeve** (portfolio_id=hyperliquid): Only HIP-3 onchain equities — stocks (TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL, TSLA, META), commodities (GLD, SLV), indices (SPY, SMH). Do NOT include BTC, SOL, HYPE, ETH, SUI, NEAR (those are in the core crypto portfolio). 10–20 positions, target weights. Save to ~/.dexter/PORTFOLIO-HYPERLIQUID.md with portfolio tool, action=update, portfolio_id=hyperliquid.
+2. **Hyperliquid sleeve** (portfolio_id=hyperliquid): Only HIP-3 onchain equities — stocks (TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL, TSLA, META), commodities (GLD, SLV), indices (SPY, SMH). Do NOT include BTC, SOL, HYPE, ETH, SUI, NEAR (those are in the core crypto portfolio). 10–20 positions, target weights. Save to .dexter/PORTFOLIO-HYPERLIQUID.md with portfolio tool, action=update, portfolio_id=hyperliquid.
 
 Include conviction tiering, regime awareness, and rationale. Call the portfolio tool twice to save both files.
 
 **Also include a "Not in the portfolio — and why" section** for each sleeve: list thesis-universe names that were considered but excluded, with a one-line reason for each (e.g. crowding, valuation, wrong regime, insufficient moat, better expression elsewhere). The trades we don't make are thesis calls too.`,
-    '/weekly': `Write a weekly performance report for my portfolio. Use ~/.dexter/PORTFOLIO.md for my holdings (or the portfolio you suggested last time). For each position, fetch the price change over the past 7 days (start_date and end_date). Also fetch the 7-day performance for:
+    '/suggest-tastytrade': `Suggest and save ONLY the tastytrade sleeve based on Identity (SOUL.md).
+
+Constraints:
+- Tastytrade-only sleeve (portfolio_id=default)
+- Include only non-Hyperliquid tickers (no HIP-3 tradable names)
+- Do NOT include TSM, AAPL, MSFT, AMZN, META, COIN, BTC, SOL, HYPE, ETH, SUI, NEAR
+- 10–20 positions with target weights, conviction tiering, regime-aware rationale
+
+Output requirements:
+- Save to .dexter/PORTFOLIO.md with portfolio tool action=update, portfolio_id=default
+- Include a section: "Not in the portfolio — and why" with considered-but-excluded names and one-line reasons`,
+    '/double-check': `Run an AI Hedge Fund second opinion on my current portfolios.
+
+Use aihf_double_check with action=run.
+- If explicit included/excluded tickers are not provided, read current .dexter/PORTFOLIO.md and .dexter/PORTFOLIO-HYPERLIQUID.md
+- Return agreement summary, high-conviction conflicts, and excluded-but-interesting names
+- Confirm the saved report filename (.dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md)
+- Keep this advisory only; do not auto-modify portfolios`,
+    '/write-essay': `Write a Substack-ready essay draft from existing research artifacts.
+
+Source priority is mandatory:
+1) latest .dexter/QUARTERLY-REPORT-YYYY-QN.md
+2) latest .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md
+3) .dexter/SOUL.md (or bundled SOUL fallback)
+
+Invoke skill "essay-synthesis" and draft 2,000–5,000 words in ikigaistudio voice.
+Quality gates before finalizing:
+- required sections: Hook, Thesis map, Committee challenge, Decision layer, Risk + invalidation
+- at least 3 precise numeric claims in first 500 words
+- no placeholders ([TODO], TBD, insert chart)
+- word count 2,000–5,000
+If any gate fails, do exactly one rewrite pass and re-check.
+
+Save with save_report to ESSAY-DRAFT-YYYY-QN.md with frontmatter:
+title, subtitle, tags, thesis_bullet, publish_status:draft.
+Return saved filename plus a 5-bullet editorial polish checklist.`,
+    '/full-loop': `Run the full autoresearch pipeline end-to-end:
+
+Step 1 — PORTFOLIOS: Build and save two thesis-aligned portfolios
+  (Tastytrade sleeve + Hyperliquid sleeve). Use the portfolio tool
+  twice to persist both. Include "Not in the portfolio" sections.
+
+Step 2 — AIHF SECOND OPINION: Run aihf_double_check with action=run.
+  Read tickers from the portfolios just saved. Wait for the full
+  analysis. The action memo will auto-append.
+
+Step 3 — ESSAY DRAFT: Invoke the essay-synthesis skill. Source priority:
+  latest QUARTERLY-REPORT, then AIHF-DOUBLE-CHECK report from step 2,
+  then SOUL.md. Draft 2,000-5,000 words in ikigaistudio voice.
+
+Step 4 — QUALITY GATES: Required sections (Hook, Thesis map,
+  Committee challenge, Decision layer, Risk + invalidation).
+  At least 3 numeric claims in first 500 words. No placeholders.
+  If any gate fails, do one rewrite pass.
+
+Step 5 — SAVE: save_report to ESSAY-DRAFT-YYYY-QN.md with
+  Substack-ready frontmatter. Return filename + 5-bullet
+  editorial checklist.`,
+    '/weekly': `Write a weekly performance report for my portfolio. Use .dexter/PORTFOLIO.md for my holdings (or the portfolio you suggested last time). For each position, fetch the price change over the past 7 days (start_date and end_date). Also fetch the 7-day performance for:
 - BTC-USD (Bitcoin)
 - GLD (Gold ETF)
 - SPY (S&P 500 ETF)
@@ -278,7 +337,7 @@ Output:
 3. Outperformance/underperformance vs each benchmark
 4. Best and worst performers in the portfolio
 5. One-line takeaway: did the portfolio beat BTC, Gold, and the S&P 500 this week?`,
-    '/quarterly': `Write a quarterly performance report for my portfolio. Use ~/.dexter/PORTFOLIO.md. Fetch price data for the past 90 days (or quarter-to-date) for all holdings plus BTC-USD, GLD, and SPY. Include:
+    '/quarterly': `Write a quarterly performance report for my portfolio. Use .dexter/PORTFOLIO.md. Fetch price data for the past 90 days (or quarter-to-date) for all holdings plus BTC-USD, GLD, and SPY. Include:
 - Portfolio return (weighted) for the quarter
 - Benchmark returns: BTC, Gold (GLD), S&P 500 (SPY)
 - Outperformance/underperformance vs each
@@ -287,44 +346,30 @@ Output:
 - Regime assessment: any sizing adjustments needed?
 - Outlook for next quarter
 - YTD and since-inception (if performance_history has data): compute and include vs BTC, SPY, GLD
-- Save the report to ~/.dexter/QUARTERLY-REPORT-YYYY-QN.md using the save_report tool (e.g. QUARTERLY-REPORT-2026-Q1.md)
+- Save the report to .dexter/QUARTERLY-REPORT-YYYY-QN.md using the save_report tool (e.g. QUARTERLY-REPORT-2026-Q1.md)
 - Call performance_history record_quarter to append this quarter's returns (period, portfolio, btc, spy, gld as decimals)`,
     '/suggest-hl': `Suggest a Hyperliquid portfolio focused on HIP-3 onchain equities — NOT crypto assets (BTC, SOL, HYPE, ETH, SUI, NEAR are already in the core portfolio). Use docs/HYPERLIQUID-SYMBOL-MAP.md for the HL→FD ticker mapping. Include:
 - 10–20 positions from HIP-3 onchain stocks (e.g. TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL, TSLA, META, MSFT, AMZN, MU, INTC), commodities (GLD, SLV, USO), or indices (SPY, SMH)
 - Do NOT allocate to BTC, SOL, HYPE, ETH, SUI, NEAR — those belong in the core portfolio
 - Size by thesis conviction, not by volume. Volume matters for execution quality (spreads, slippage) but should not drive allocation weights
 - Target weights and brief rationale
-- Save to ~/.dexter/PORTFOLIO-HYPERLIQUID.md using the portfolio tool with portfolio_id=hyperliquid
+- Save to .dexter/PORTFOLIO-HYPERLIQUID.md using the portfolio tool with portfolio_id=hyperliquid
 - **"Not in the portfolio — and why"**: list HIP-3-eligible names from the thesis universe that were considered but excluded, with a one-line reason for each. The trades we don't make are thesis calls too.`,
-    '/hl-report': `Write a quarterly performance report for my Hyperliquid portfolio only. Use ~/.dexter/PORTFOLIO-HYPERLIQUID.md. Map HL symbols to FD tickers per docs/HYPERLIQUID-SYMBOL-MAP.md. Fetch quarter-to-date (or 90-day) prices for each position plus BTC-USD, GLD, SPY. Include:
+    '/hl-report': `Write a quarterly performance report for my Hyperliquid portfolio only. Use .dexter/PORTFOLIO-HYPERLIQUID.md. Map HL symbols to FD tickers per docs/HYPERLIQUID-SYMBOL-MAP.md. Fetch quarter-to-date (or 90-day) prices for each position plus BTC-USD, GLD, SPY. Include:
 - Portfolio return vs BTC, SPY, GLD (and hl_basket if computable)
 - Category attribution: Core, L1, AI infra, tokenization
 - Best and worst performers
 - Regime assessment and outlook
 - YTD and since-inception if performance_history has data
-- Save to ~/.dexter/QUARTERLY-REPORT-HL-YYYY-QN.md via save_report
+- Save to .dexter/QUARTERLY-REPORT-HL-YYYY-QN.md via save_report
 - Call performance_history record_quarter with portfolio_hl (and optionally hl_basket)`,
-    '/hl-essay': `Using the Hyperliquid quarterly report from ~/.dexter/QUARTERLY-REPORT-HL-*.md (or the HL report you just produced), write a 600–800 word reflection essay on the on-chain stocks thesis. Structure:
+    '/hl-essay': `Using the Hyperliquid quarterly report from .dexter/QUARTERLY-REPORT-HL-*.md (or the HL report you just produced), write a 600–800 word reflection essay on the on-chain stocks thesis. Structure:
 1. What the numbers say — which HIP-3 categories validated (Core, L1, AI infra, tokenization), which didn't
 2. The regime problem — what BTC/Gold/SPY told us for on-chain exposure
 3. The machine's recommendation — sizing adjustments for the HL portfolio
 4. One sentence that captures the tension between on-chain optionality and regime risk
 
 Voice: structural thinking, precise numbers, blunt assessment. No hype. Output markdown ready for Claude polish or direct publish.`,
-    '/substack-draft': `Run the full Substack draft pipeline in one flow:
-1) Ensure we have current portfolio context. If missing, tell me to run /suggest first and stop.
-2) Run AIHF second opinion with aihf_double_check action=run (read from .dexter portfolio files if not provided).
-3) Invoke skill "essay-synthesis" and draft a 2,000–5,000 word system essay in ikigaistudio voice.
-4) Use this source priority: latest QUARTERLY-REPORT-YYYY-QN.md, then latest AIHF-DOUBLE-CHECK-YYYY-MM-DD.md, then SOUL.md.
-5) Enforce quality gates before finalizing:
-   - required sections: Hook, Thesis map, Committee challenge, Decision layer, Risk + invalidation
-   - at least 3 precise numeric claims in first 500 words
-   - no placeholders ([TODO], TBD, insert chart)
-   - word count 2,000–5,000
-   If any gate fails, do exactly one rewrite pass and re-check.
-6) Save with save_report to ESSAY-DRAFT-YYYY-QN.md including Substack-ready frontmatter:
-   title, subtitle, tags, thesis_bullet, publish_status:draft.
-7) Return the saved filename and a 5-bullet editorial checklist for final human polish before publish.`,
     '/substack-draft-hl': `Run a Hyperliquid-first Substack draft pipeline:
 1) Ensure .dexter/PORTFOLIO-HYPERLIQUID.md exists. If missing, tell me to run /suggest-hl first and stop.
 2) Run AIHF second opinion with aihf_double_check action=run using current included/excluded context.
@@ -376,21 +421,43 @@ Do not submit anything until I explicitly confirm.`,
 - For covered calls: report the suggested BTC strike, the BTC-equivalent premium, and the effective BTC sale price if called away = strike + premium. Explain that if BTC expires below strike, I keep the premium and keep the BTC; if BTC expires above strike, upside is capped beyond the effective sale price.
 - The IBIT contract is only a proxy data source with 100-share contract sizing; Hypersurface execution is fractional BTC, so present the final recommendation in BTC terms, not IBIT contract-risk terms.
 
-Then output: "For secured puts we suggest strike $X (IBIT strike $Y)" and "For covered calls we suggest strike $A (IBIT strike $B)" with one-line rationale each. After that, add a SHORT section titled "If using IBIT on tastytrade instead" with 1-2 bullets max: whether the analogous IBIT trade is also reasonable this week, and the single most important reason why. If IBIT is not in THETA-POLICY allowed underlyings, tell the user to add IBIT (or BITO/GBTC) to ~/.dexter/THETA-POLICY.md and rerun.`,
-    '/hypersurface': `Advice for Hypersurface only — I will execute manually on Hypersurface; do not place any broker orders. Give me optimal strike advice for BTC options expiring this Friday (same calendar as Hypersurface weekly) for BOTH secured puts AND covered calls. Run tastytrade_theta_scan twice in advisory mode with low-credit weekly filtering: (1) underlyings_csv=IBIT (or BITO), advisory_only=true, min_dte=1, max_dte=7, min_credit=0.01, strategy_type=cash_secured_put; (2) same params but strategy_type=covered_call. Show each table_summary. Also fetch current IBIT price and BTC price, then convert the selected IBIT strikes and premiums into BTC-equivalent numbers using the current price ratio. IMPORTANT: the main goal is to explain WHY the chosen strike is best versus the nearby alternatives, not to spend much space on whether Hypersurface is better. Keep venue commentary brief. For each side, compare the chosen strike to at least the nearest 1-2 neighboring strikes above/below and explain the trade-off in premium, probability, and effective entry/sale price. Focus on the actual decision: why choose this strike instead of the next more aggressive or more conservative line.
+Then output: "For secured puts we suggest strike $X (IBIT strike $Y)" and "For covered calls we suggest strike $A (IBIT strike $B)" with one-line rationale each. After that, add a SHORT section titled "If using IBIT on tastytrade instead" with 1-2 bullets max: whether the analogous IBIT trade is also reasonable this week, and the single most important reason why. If IBIT is not in THETA-POLICY allowed underlyings, tell the user to add IBIT (or BITO/GBTC) to .dexter/THETA-POLICY.md and rerun.`,
+    '/options-hl': `Advice for Hypersurface only — I will execute manually on Hypersurface; do not place any broker orders.
 
-- For secured puts: report the suggested BTC strike, the BTC-equivalent premium, and the effective BTC entry if assigned = strike - premium. Explain the expiry economics like this: if BTC expires below strike, I get assigned at strike but my net economic entry is reduced by the premium. Mention the 'missed cheaper spot buy' only net of premium, not raw strike difference.
-- For covered calls: report the suggested BTC strike, the BTC-equivalent premium, and the effective BTC sale price if called away = strike + premium. Explain that if BTC expires below strike, I keep the premium and keep the BTC; if BTC expires above strike, upside is capped beyond the effective sale price.
-- The IBIT contract is only a proxy data source with 100-share contract sizing; Hypersurface execution is fractional BTC, so present the final recommendation in BTC terms, not IBIT contract-risk terms.
+Goal:
+- Suggest the most optimal strike prices for BTC, SOL, and HYPE options for next Friday expiry.
+- Provide BOTH secured-put and covered-call strike ideas per asset where meaningful.
 
-Then output exactly in this format: "For secured puts we suggest strike $X (IBIT strike $Y)" and "For covered calls we suggest strike $A (IBIT strike $B)" with one-line rationale each (e.g. APR vs probability trade-off). After that, add a SHORT section titled "If using IBIT on tastytrade instead" with 1-2 bullets max: whether the analogous IBIT trade is also reasonable this week, and the single most important reason why. If IBIT is not in THETA-POLICY allowed underlyings, tell me to add IBIT to ~/.dexter/THETA-POLICY.md and rerun; do not guess strikes.`,
-    '/options': `Suggest options to execute on tastytrade that fit our thesis from SOUL.md. Use tastytrade_theta_scan for SOUL-aligned, non-crypto, non-HL thesis equities only: equipment, foundry-adjacent, power, memory, and networking names such as AMAT, ASML, LRCX, KLAC, VRT, CEG, MU, ANET unless THETA-POLICY explicitly narrows that list further. Do NOT treat generic policy leftovers like SPX/SPY/QQQ, IBIT, MSTY, or MSTR as thesis-fit recommendations for this shortcut. Policy is a hard block. Show the table_summary (Underlying, Strategy, Strike(s), Credit, APR-like, Prob (ITM), DTE, Breakeven, Max loss) and recommend the top 2–3 candidates with strategy type, strikes, expiration, credit, max loss, and how each fits the thesis. If the only passing results are non-thesis names or portfolio-fit artifacts, say clearly: "No thesis-fit trade from this scan" and explain the policy mismatch instead of presenting those names as top candidates. Do not submit any order — I will preview and confirm before submitting.`,
-    '/theta-policy': `Help me bootstrap ~/.dexter/THETA-POLICY.md. Read docs/THETA-POLICY.example.md and docs/THETA-POLICY.md, then:
+Method:
+- For BTC, use tastytrade_theta_scan proxy workflow (IBIT/BITO) and convert to BTC-equivalent terms.
+- For SOL and HYPE, use available market/regime context and infer strike ladders explicitly when direct option-chain proxy is unavailable.
+- For each asset, compare at least 2 neighboring strikes and explain why the chosen strike is optimal (premium vs probability vs effective entry/sale).
+
+Output format:
+- BTC: suggested put strike, call strike, premium context, rationale.
+- SOL: suggested put strike, call strike, rationale + assumptions.
+- HYPE: suggested put strike, call strike, rationale + assumptions.
+- Keep it execution-ready for manual Hypersurface entry and clearly label any assumption-driven estimates.`,
+    '/options-tastytrade': `Suggest options to execute on tastytrade that fit our thesis from SOUL.md. Use tastytrade_theta_scan for SOUL-aligned, non-crypto, non-HL thesis equities only: equipment, foundry-adjacent, power, memory, and networking names such as AMAT, ASML, LRCX, KLAC, VRT, CEG, MU, ANET unless THETA-POLICY explicitly narrows that list further. Do NOT treat generic policy leftovers like SPX/SPY/QQQ, IBIT, MSTY, or MSTR as thesis-fit recommendations for this shortcut. Policy is a hard block. Show the table_summary (Underlying, Strategy, Strike(s), Credit, APR-like, Prob (ITM), DTE, Breakeven, Max loss) and recommend the top 2–3 candidates with strategy type, strikes, expiration, credit, max loss, and how each fits the thesis. Do not submit any order — I will preview and confirm before submitting.`,
+    '/theta-policy': `Help me bootstrap .dexter/THETA-POLICY.md. Read docs/THETA-POLICY.example.md and docs/THETA-POLICY.md, then:
 1. show me the exact starter template
 2. explain what each field controls
 3. tell me what I should edit first for a conservative default policy
 4. remind me which Phase 5 shortcuts to run after I create it
 Do not place any trades.`,
+  };
+
+  const SHORTCUT_ALIASES: Record<string, string> = {
+    '/LFG': '/full-loop',
+    '/substack-draft': '/write-essay',
+    '/hypersurface': '/options-hl',
+    '/options': '/options-tastytrade',
+  };
+
+  const SHORTCUT_PROFILES: Record<string, AgentConfig['toolProfile']> = {
+    '/suggest': 'suggest',
+    '/suggest-hl': 'suggest',
+    '/suggest-tastytrade': 'suggest',
   };
 
   const handleSubmit = async (query: string) => {
@@ -405,12 +472,15 @@ Do not place any trades.`,
       return;
     }
 
+    const shortcutKey = SHORTCUT_ALIASES[query] ?? query;
     const expandedQuery =
-      query === '/theta-help'
+      shortcutKey === '/theta-help'
         ? buildThetaHelpQuery()
-        : query === '/tastytrade-status'
+        : shortcutKey === '/tastytrade-status'
           ? buildTastytradeStatusQuery()
-          : QUERY_SHORTCUTS[query] ?? query;
+          : QUERY_SHORTCUTS[shortcutKey] ?? query;
+    const shortcutProfile = SHORTCUT_PROFILES[shortcutKey] ?? 'full';
+    const shortcutMaxIterations = shortcutKey === '/full-loop' ? 15 : undefined;
 
     if (modelSelection.isInSelectionFlow() || agentRunner.pendingApproval || agentRunner.isProcessing) {
       return;
@@ -418,7 +488,10 @@ Do not place any trades.`,
 
     await inputHistory.saveMessage(expandedQuery);
     inputHistory.resetNavigation();
-    const result = await agentRunner.runQuery(expandedQuery);
+    const result = await agentRunner.runQuery(expandedQuery, {
+      toolProfile: shortcutProfile,
+      maxIterations: shortcutMaxIterations,
+    });
     if (result?.answer) {
       await inputHistory.updateAgentResponse(result.answer);
     }

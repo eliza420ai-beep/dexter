@@ -1,7 +1,7 @@
 import { AIMessage } from '@langchain/core/messages';
 import { StructuredToolInterface } from '@langchain/core/tools';
 import { callLlm } from '../model/llm.js';
-import { getTools } from '../tools/registry.js';
+import { getTools, type ToolProfile } from '../tools/registry.js';
 import { buildSystemPrompt, buildIterationPrompt, loadSoulDocument, loadVoiceDocument, loadSoulHLDocument, loadPortfolioDocument, loadThetaPolicySummary } from '../agent/prompts.js';
 import { extractTextContent, hasToolCalls } from '../utils/ai-message.js';
 import { InMemoryChatHistory } from '../utils/in-memory-chat-history.js';
@@ -56,18 +56,19 @@ export class Agent {
    */
   static async create(config: AgentConfig = {}): Promise<Agent> {
     const model = config.model ?? DEFAULT_MODEL;
-    const tools = getTools(model);
+    const toolProfile: ToolProfile = config.toolProfile ?? 'full';
+    const tools = getTools(model, toolProfile);
     const soulContent = await loadSoulDocument();
     const [voiceContent, soulHLContent, portfolioContent, thetaPolicySummary] = await Promise.all([
-      loadVoiceDocument(),
+      toolProfile === 'suggest' ? Promise.resolve(null) : loadVoiceDocument(),
       loadSoulHLDocument(),
       loadPortfolioDocument(),
-      loadThetaPolicySummary(),
+      toolProfile === 'suggest' ? Promise.resolve(null) : loadThetaPolicySummary(),
     ]);
     let memoryContextInfo: { filesLoaded: string[]; tokenEstimate: number } | undefined;
     let memoryContextText: string | null = null;
 
-    if (config.memoryEnabled !== false) {
+    if (config.memoryEnabled !== false && toolProfile !== 'suggest') {
       const memoryManager = await MemoryManager.get();
       const memoryContext = await memoryManager.loadSessionContext();
       memoryContextText = memoryContext.text || null;
@@ -87,6 +88,7 @@ export class Agent {
       config.channel,
       config.groupContext,
       memoryContextText,
+      toolProfile,
     );
     return new Agent(config, tools, systemPrompt, memoryContextInfo);
   }
