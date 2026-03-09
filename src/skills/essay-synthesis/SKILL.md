@@ -20,7 +20,19 @@ Essay Synthesis Progress:
 
 ## Step 1: Gather Source Material
 
-Read all available source reports from `~/.dexter/`. You need at minimum one quarterly report.
+Read all available source reports from `.dexter/`. You need at minimum one quarterly report.
+
+### Source Priority (Mandatory)
+
+Use this exact priority order when multiple files exist:
+1. Latest quarterly report for the requested period (`QUARTERLY-REPORT-YYYY-QN.md`)
+2. Latest AIHF validation report for the same session/period (`AIHF-DOUBLE-CHECK-YYYY-MM-DD.md`)
+3. `SOUL.md` thesis context (`.dexter/SOUL.md` first, bundled fallback second)
+
+If any input is missing:
+- Missing quarterly report: stop and ask user to run `/quarterly` (or provide report text)
+- Missing AIHF report: continue, but include a short "validation unavailable" note in the essay body
+- Missing SOUL: continue using bundled fallback and mention that assumption briefly
 
 ### 1.1 Quarterly Report (Required)
 Read the most recent `QUARTERLY-REPORT-YYYY-QN.md` (or user-specified period).
@@ -38,7 +50,7 @@ Read the most recent `AIHF-DOUBLE-CHECK-YYYY-MM-DD.md`.
 **Extract:** agreement percentage, high-conviction conflicts, excluded-but-interesting names, meta (how many tickers validated). The AIHF perspective adds a "second opinion" thread to the essay — where the 18-agent committee agreed and where it pushed back.
 
 ### 1.4 SOUL.md (Identity & Thesis)
-Read `~/.dexter/SOUL.md` or the bundled `SOUL.md`.
+Read `.dexter/SOUL.md` or the bundled `SOUL.md`.
 
 **Extract:** current thesis layers, conviction tiers, regime framework. This is the thesis the essay measures against.
 
@@ -132,6 +144,16 @@ Before saving, verify:
 - [ ] Subtitle makes a specific, falsifiable claim
 - [ ] Paragraphs are 2-4 sentences
 - [ ] At least 3 precise numbers in the first 500 words
+- [ ] Required sections exist: Hook, Thesis map, Committee challenge, Decision layer, Risk + invalidation
+- [ ] Word count is between 2,000 and 5,000
+- [ ] No placeholders such as "[TODO]", "TBD", "insert chart"
+
+### Step 5.1: Single Fix Pass (Auto-Rewrite Once)
+
+If any checklist item fails:
+1. Rewrite the draft exactly once to fix missing requirements.
+2. Re-check checklist.
+3. If still failing, return best draft plus a concise note listing unresolved checklist items.
 
 ## Step 6: Save the Draft
 
@@ -140,5 +162,21 @@ Use the `save_report` tool to save the essay:
 **Filename:** `ESSAY-DRAFT-YYYY-QN.md` (e.g. `ESSAY-DRAFT-2026-Q1.md`)
 
 If a Hyperliquid-specific essay was written: `ESSAY-DRAFT-HL-YYYY-QN.md`
+
+Include frontmatter at the top for Substack handoff:
+
+```markdown
+---
+title: "<short declarative title>"
+subtitle: "<specific falsifiable claim>"
+tags:
+  - ai
+  - investing
+  - portfolio
+  - markets
+thesis_bullet: "<single-line thesis for this draft>"
+publish_status: draft
+---
+```
 
 The user will review, polish, and publish to Substack.

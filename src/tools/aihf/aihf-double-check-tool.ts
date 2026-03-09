@@ -141,7 +141,10 @@ export const aihfDoubleCheckTool = new DynamicStructuredTool({
 
     // --- Save report + record in feedback history ---
     const date = new Date().toISOString().slice(0, 10);
-    const markdown = renderDoubleCheckMarkdown(result, date);
+    const markdown = [
+      renderDoubleCheckMarkdown(result, date),
+      renderActionMemo({ defaultIncluded, hyperliquidIncluded: hlIncluded, excluded }, result),
+    ].join('\n\n');
     const filename = `AIHF-DOUBLE-CHECK-${date}.md`;
     saveReport(filename, markdown);
     try { recordRun(result, date); } catch { /* non-critical */ }
@@ -231,6 +234,78 @@ function formatResult(result: DoubleCheckResult, filename: string): string {
 
   lines.push('');
   lines.push(`Full report saved to .dexter/${filename}`);
+  lines.push('Action memo auto-appended to report: Keep / Trim / Remove / Exclusion Stance.');
+
+  return lines.join('\n');
+}
+
+function renderActionMemo(
+  input: {
+    defaultIncluded: TickerEntry[];
+    hyperliquidIncluded: TickerEntry[];
+    excluded: ExcludedEntry[];
+  },
+  result: DoubleCheckResult,
+): string {
+  const lines: string[] = [];
+
+  const included = [
+    ...input.defaultIncluded.map((t) => ({ ticker: t.ticker.toUpperCase(), sleeve: 'default' as const })),
+    ...input.hyperliquidIncluded.map((t) => ({ ticker: t.ticker.toUpperCase(), sleeve: 'hyperliquid' as const })),
+  ];
+  const conflictByTicker = new Map(result.conflicts.map((c) => [c.ticker.toUpperCase(), c]));
+  const excludedInteresting = new Set(result.excluded_interesting.map((e) => e.ticker.toUpperCase()));
+
+  const keepIncluded = included.filter((i) => !conflictByTicker.has(i.ticker));
+  const trimOrRemove = included
+    .map((i) => ({ i, c: conflictByTicker.get(i.ticker) }))
+    .filter((x): x is { i: (typeof included)[number]; c: NonNullable<typeof x.c> } => Boolean(x.c));
+
+  lines.push('## Action Memo (Auto-Generated)');
+  lines.push('');
+  lines.push('*Advisory only. Use with thesis/risk constraints before execution.*');
+  lines.push('');
+
+  lines.push('### Keep');
+  if (keepIncluded.length === 0) {
+    lines.push('- None.');
+  } else {
+    for (const k of keepIncluded) {
+      lines.push(`- **${k.ticker}** (${k.sleeve}): keep.`);
+    }
+  }
+  lines.push('');
+
+  lines.push('### Trim / Remove');
+  if (trimOrRemove.length === 0) {
+    lines.push('- None.');
+  } else {
+    for (const row of trimOrRemove) {
+      const decision = row.c.aihf_confidence >= 0.9 || ['SHORT', 'SELL'].includes(row.c.aihf_stance)
+        ? 'remove'
+        : 'trim';
+      lines.push(
+        `- **${row.i.ticker}** (${row.i.sleeve}): **${decision.toUpperCase()}** — AIHF ${row.c.aihf_stance} (${Math.round(
+          row.c.aihf_confidence * 100,
+        )}%). ${row.c.note}`,
+      );
+    }
+  }
+  lines.push('');
+
+  lines.push('### Exclusion Stance');
+  if (input.excluded.length === 0) {
+    lines.push('- None.');
+  } else {
+    for (const e of input.excluded) {
+      const ticker = e.ticker.toUpperCase();
+      if (excludedInteresting.has(ticker)) {
+        lines.push(`- **${ticker}**: revisit exclusion (AIHF flagged as interesting).`);
+      } else {
+        lines.push(`- **${ticker}**: exclusion stands (${e.reason}).`);
+      }
+    }
+  }
 
   return lines.join('\n');
 }

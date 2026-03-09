@@ -2,7 +2,7 @@
  * Bundled default AIHF graph template.
  *
  * Dexter owns this graph so we don't depend on AIHF's /flows endpoint.
- * 18 analyst nodes feed into a single portfolio_manager_dexter node.
+ * 18 analyst nodes feed into a single portfolio_manager node.
  * The AIHF backend inserts its own risk_manager between analysts and PM.
  */
 
@@ -31,7 +31,8 @@ const ANALYST_IDS = [
 
 export type AnalystId = (typeof ANALYST_IDS)[number];
 
-const PM_NODE_ID = 'portfolio_manager_dexter';
+const SUFFIX = 'dxt001';
+const PM_NODE_ID = `portfolio_manager_${SUFFIX}`;
 
 export function getAnalystIds(): readonly string[] {
   return ANALYST_IDS;
@@ -41,15 +42,24 @@ export function getPMNodeId(): string {
   return PM_NODE_ID;
 }
 
+/**
+ * AIHF backend strips a trailing 6-char token from node IDs to recover base keys.
+ * Use a deterministic suffix so IDs like `phil_fisher` don't get misparsed as `phil`.
+ */
+function suffixed(id: string): string {
+  return `${id}_${SUFFIX}`;
+}
+
 export function getDefaultAihfGraph(): AihfGraph {
   const nodes: AihfGraphNode[] = [
-    ...ANALYST_IDS.map((id) => ({ id, type: 'analyst' })),
+    ...ANALYST_IDS.map((id) => ({ id: suffixed(id), type: 'analyst' })),
     { id: PM_NODE_ID, type: 'portfolio_manager' },
   ];
 
   const edges: AihfGraphEdge[] = ANALYST_IDS.map((id) => ({
-    from: id,
-    to: PM_NODE_ID,
+    id: `${suffixed(id)}->${PM_NODE_ID}`,
+    source: suffixed(id),
+    target: PM_NODE_ID,
   }));
 
   return { nodes, edges };
