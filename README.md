@@ -36,7 +36,7 @@ Not a chatbot. A **research loop**: plan → execute → validate → refine. A 
 
 You get weekly rebalance checks (Mondays), quarterly benchmark reports, and optional dollar rebalancing when AUM is set. Regime labels, concentration alerts, investor-letter drafts. Fund ops: AUM config, YTD and since-inception performance, reports in `~/.dexter/`. **VOICE.md** gives every response a consistent tone; override at `~/.dexter/VOICE.md`.
 
-**Two portfolios, zero overlap:** tastytrade sleeve (PORTFOLIO.md) for names *not* on Hyperliquid (e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG — no TSM, AAPL, or any HL-tradable ticker). On-chain sleeve (PORTFOLIO-HYPERLIQUID.md) is for **HIP-3 onchain equities only** (tokenized stocks, commodities, indices) — not crypto. Core crypto (BTC, SOL, HYPE, ETH, SUI, NEAR) is held separately (e.g. 80% BTC / 10% SOL / 10% HYPE for options on Hypersurface); the HL sleeve focuses on what HIP-3 uniquely offers: onchain stocks like TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL. Use both sleeves. Suggest both. Save both.
+**Two portfolios, zero overlap:** tastytrade sleeve (PORTFOLIO.md) for names *not* on Hyperliquid (e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG — no TSM, AAPL, or any HL-tradable ticker). On-chain sleeve (PORTFOLIO-HYPERLIQUID.md) is for **HIP-3 onchain equities only** (tokenized stocks, commodities, indices) — not crypto. The intended global architecture is **80% BTC core / 10% tastytrade sleeve / 10% Hyperliquid sleeve**. The two sleeves are equally weighted diversification engines whose bar is to outperform **SPY**, **GLD**, and **BTC** over time. Use both sleeves. Suggest both. Save both.
 
 **tastytrade:** Full theta engine — SOUL-aligned scan (thesis names, not index defaults), THETA-POLICY hard block, strategy preview, roll/repair, analytics. Dry-run before any live order; submit/cancel require explicit approval.
 
@@ -51,14 +51,14 @@ This fork extends [virattt/dexter](https://github.com/virattt/dexter) with a def
 | Layer | What | Why |
 |-------|------|-----|
 | **Portfolio Builder** | Agent owns the outcome: rebalance, benchmark, report. Bar = beat hedge funds, indexes, BTC. Measurement is a number, not “insightful.” | Generic agents answer questions. This one is judged on the portfolio. |
-| **SOUL.md** | Identity + thesis: AI infra supply chain (7 layers), conviction tiers, sizing rules. BTC-heavy core; HYPE, SOL/NEAR/SUI/ETH as satellites. “When the evidence conflicts with doctrine, I follow the evidence.” | Not a prompt — a worldview. The edge lives where standard tools can’t see (equipment, EDA, power). SOUL constrains every query. |
+| **SOUL.md** | Identity + thesis: AI infra supply chain (7 layers), conviction tiers, sizing rules. `80% BTC core / 10% tastytrade sleeve / 10% Hyperliquid sleeve`. “When the evidence conflicts with doctrine, I follow the evidence.” | Not a prompt — a worldview. The edge lives where standard tools can’t see (equipment, EDA, power). SOUL constrains every query. |
 | **HEARTBEAT** | Weekly rebalance vs target. Quarterly report vs S&P, NASDAQ, BTC. Regime label. Newsletter draft when it matters. Dollar rebalancing when AUM set. | Passive monitoring isn't enough. Scheduled action: detect drift, deliver reports. |
 | **VOICE.md** | ikigaistudio tone and structure in every prompt. | Generic output sounds generic. Essays and letters need a recognizable voice. |
 | **Financial Datasets** | Primary source for prices, fundamentals, filings, insider trades, news. Optional Finnhub fallback for price/news when FD is down or rate-limited. | Built for agents: section-level filings, structured JSON. [DATA-API-FINANCIAL-DATASETS.md](docs/DATA-API-FINANCIAL-DATASETS.md). |
 | **tastytrade** | 6 shipped phases: accounts + positions + balances (Ph 1), option chain + quote (Ph 2), dry-run/submit/cancel (Ph 3, opt-in), portfolio sync with Target/Actual/Gap + heartbeat (Ph 4), SOUL-aligned theta engine — scan, preview, roll, repair (Ph 5), analytics — transactions, earnings calendar, watchlist, risk metrics scorecard (Ph 6). | Live broker data vs static PORTFOLIO.md. Theta scan defaults to SOUL thesis names — not SPX/SPY/QQQ. THETA-POLICY hard block + no-call list protects Core Compounders. Dry-run before any live order; submit/cancel require explicit approval. [PRD-TASTYTRADE-INTEGRATION.md](docs/PRD-TASTYTRADE-INTEGRATION.md), [PRD-TASTYTRADE-PHASE-5-THETA-ENGINE.md](docs/PRD-TASTYTRADE-PHASE-5-THETA-ENGINE.md). |
 | **Hyperliquid** | HIP-3 data, liquidity ranking, period returns, portfolio ops, live sync, order preview, opt-in execution with approval. **HL sleeve = onchain equities only** (TSM, NVDA, PLTR, COIN, HOOD, CRCL, etc.) — no BTC/SOL/HYPE/ETH/SUI/NEAR (those live in the core crypto portfolio). | Third portfolio: on-chain, 24/7, preview-first then execute when you say. [PRD-HYPERLIQUID-PORTFOLIO.md](docs/PRD-HYPERLIQUID-PORTFOLIO.md). |
 
-Core thesis: BTC HODL is the foundation. Diversification satellites are HYPE and SOL/NEAR/SUI/ETH. The AI infrastructure universe is the opportunity set. Dexter helps decide when to diversify — and when HODLing is the right call.
+Core thesis: BTC HODL is the foundation. The off-chain tastytrade sleeve and on-chain Hyperliquid sleeve are equal-sized diversification engines around that BTC core. The AI infrastructure universe is the main opportunity set. Dexter helps decide when to diversify — and when HODLing is the right call.
 
 ---
 
@@ -130,6 +130,7 @@ Type a shortcut in the CLI to run a full query; see [ULTIMATE-TEST-QUERIES.md](d
 | `/hl-report` | Quarterly performance report for the HL sleeve only; save to `~/.dexter/QUARTERLY-REPORT-HL-*.md`. |
 | `/write-essay` | Substack-ready 2,000–5,000 word draft from reports, AIHF, SOUL, and both live sleeves. Works with fallback sources, but the best two-sleeve fund essay needs both `/quarterly` and `/hl-report` first. |
 | `/close-loop` | Post-publish recursive pass: score prior quarter tests, extract thesis deltas, and save `THESIS-DELTA-*.md` plus `NEXT-QUARTER-TESTS-*.md`. |
+| `/btc-temp-check` | BTC core-position temperature check: reads `BTC.md` + `SOUL.md`, compares BTC vs GLD vs SPY, runs AIHF on `IBIT` as a proxy disagreement signal, and saves `BTC-TEMP-CHECK-*.md`. Alias: `/btc`. |
 | `/full-loop` | Run the full pipeline: suggest both sleeves, run AIHF double-check, then draft the essay. Best output still comes after both quarterly reports exist. |
 | `/hl-essay` | 600–800 word reflection on the on-chain stocks thesis using the latest HL quarterly report. |
 | **Theta (tastytrade options)** | |
@@ -155,6 +156,10 @@ For essays, there are two modes:
 For recursion, there is a third step after publication:
 
 - Post-publish recursive mode: run `/close-loop` after the essay is live to score the previous quarter's tests, save the current quarter's thesis delta, and generate falsifiable tests for the next quarter. This keeps the essay from becoming content-only; it becomes machine-readable learning.
+
+For BTC-core risk, there is now a dedicated operating pass:
+
+- BTC temp-check mode: run `/btc-temp-check` when you want a doctrine-aware answer to "should the BTC core be held, trimmed, hedged, or watched?" It uses `IBIT` as a proxy input for AIHF, but the final call is based on doctrine + regime + concentration, not ETF proxy sentiment alone.
 
 ---
 
@@ -363,6 +368,7 @@ And just like with tastytrade, the Hyperliquid integration is opinionated about 
 
 | Doc | Purpose |
 |-----|---------|
+| [BTC.md](BTC.md) | BTC-core doctrine, temp-check workflow, IBIT proxy logic, and when BTC lessons belong in `SOUL.md` |
 | [SOUL.md](SOUL.md) | Thesis, coverage universe, conviction tiers, sizing rules |
 | [VOICE.md](docs/VOICE.md) | Brand and writing style |
 | [HEARTBEAT.example.md](docs/HEARTBEAT.example.md) | Monitoring template → `~/.dexter/HEARTBEAT.md` |
@@ -381,6 +387,8 @@ And just like with tastytrade, the Hyperliquid integration is opinionated about 
 | [FUND-CONFIG.md](docs/FUND-CONFIG.md), [EXTERNAL-RESOURCES.md](docs/EXTERNAL-RESOURCES.md) | AUM, inception date, research references |
 
 **Related:** [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) — same org; multi-agent equity analysis (18 analyst agents + risk/portfolio manager), Hyperliquid integration (planned), Tastytrade daily options (experimental). Shares thesis context via **SOUL.md** (and optional `~/.ai-hedge-fund/` config). Use it for signals and portfolio construction experiments; use Dexter for research, live broker data, theta workflows, and execution. Details: [EXTERNAL-RESOURCES.md §9](docs/EXTERNAL-RESOURCES.md#9-ai-hedge-fund--multi-agent-portfolio-construction).
+
+For BTC-core decisions specifically, see [BTC.md](BTC.md). The short version: `SOUL.md` owns the structural BTC doctrine, while BTC temp checks are operational overlays that combine regime, concentration, and AIHF-on-IBIT proxy disagreement. Do not rewrite doctrine just because the proxy turns bearish for a week.
 
 ---
 

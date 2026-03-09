@@ -54,12 +54,22 @@ export async function loadPortfolioHLDocument(): Promise<string | null> {
 
 /**
  * Load ~/.dexter/fund-config.json if it exists.
- * Contains aum (dollars) and inceptionDate for dollar rebalancing.
+ * Contains total AUM, optional sleeve AUMs, and inceptionDate.
  */
-export async function loadFundConfig(): Promise<{ aum?: number; inceptionDate?: string } | null> {
+export async function loadFundConfig(): Promise<{
+  aum?: number;
+  aum_tastytrade?: number;
+  aum_hl?: number;
+  inceptionDate?: string;
+} | null> {
   try {
     const content = await readFile(FUND_CONFIG_PATH, 'utf-8');
-    return JSON.parse(content) as { aum?: number; inceptionDate?: string };
+    return JSON.parse(content) as {
+      aum?: number;
+      aum_tastytrade?: number;
+      aum_hl?: number;
+      inceptionDate?: string;
+    };
   } catch {
     return null;
   }
@@ -155,7 +165,7 @@ ${isMon ? `### Weekly Rebalance Check
 - **Hyperliquid portfolio:** If HL account is connected (hyperliquid_positions / hyperliquid_sync_portfolio available), call hyperliquid_sync_portfolio with write_to_file=true first to refresh PORTFOLIO-HYPERLIQUID.md from live positions, then call hyperliquid_portfolio_ops with action=rebalance_check. Otherwise use PORTFOLIO-HYPERLIQUID.md as provided below. Then call hyperliquid_order_preview to get reviewable order intents; present the preview and concise trim/add recommendations (e.g. "Trim HYPE 2%, add to SOL"). Target comes from HEARTBEAT.md "## HIP-3 Target" (Ticker | TargetMin | TargetMax | Category | Notes). When suggesting new HL positions, size by thesis conviction, not by volume (volume matters for execution, not allocation). **Do NOT submit any HL orders in heartbeat — preview and alert only.** Never call any HL submit or cancel tool from heartbeat.
 - **Regime label:** Fetch 7-day move for BTC-USD, GLD, SPY. Output one line: Regime: risk-on / risk-off / mixed. Basis: [brief reason from benchmark direction]
 - **Concentration alerts:** For both portfolios, flag any position >5% above its target weight. Recommend specific trim/add actions.
-- **Dollar rebalancing:** If ~/.dexter/fund-config.json has aum set, output rebalance actions in dollar amounts for the main portfolio. If aum_hl is set, hyperliquid_portfolio_ops rebalance_check returns suggestedDollar per HL trim/add action — use those for HL sleeve dollar recommendations. Use fund_config tool to read aum / aum_hl if needed.
+- **Dollar rebalancing:** If ~/.dexter/fund-config.json has aum_tastytrade set, use that for main/tastytrade sleeve dollar rebalance actions. If aum_tastytrade is not set but aum is set, you may fall back to total aum. If aum_hl is set, hyperliquid_portfolio_ops rebalance_check returns suggestedDollar per HL trim/add action — use those for HL sleeve dollar recommendations. Use fund_config tool to read aum / aum_tastytrade / aum_hl if needed.
 - **Weekly newsletter draft:** If noteworthy (material moves, regime shift, rebalance needed), draft a 150–250 word Substack snippet. Save to ~/.dexter/WEEKLY-DRAFT-YYYY-MM-DD.md via save_report. Include both portfolios when both exist. Voice: structural, precise numbers, no hype (see VOICE.md)
 - If rebalancing is recommended, write a concise alert with specific actions
 - Use read_file to read ~/.dexter/PORTFOLIO.md or PORTFOLIO-HYPERLIQUID.md if not provided` : ''}
@@ -200,11 +210,13 @@ HL account is configured (HYPERLIQUID_ACCOUNT_ADDRESS). For HL rebalance or quar
       : '';
 
   const fundConfigSection =
-    fundConfig && (fundConfig.aum ?? fundConfig.inceptionDate)
+    fundConfig && (fundConfig.aum ?? fundConfig.aum_tastytrade ?? fundConfig.aum_hl ?? fundConfig.inceptionDate)
       ? `
 ## Fund Config (~/.dexter/fund-config.json)
 
-AUM: ${fundConfig.aum != null ? `$${fundConfig.aum.toLocaleString()}` : 'not set'}
+AUM (total): ${fundConfig.aum != null ? `$${fundConfig.aum.toLocaleString()}` : 'not set'}
+AUM (tastytrade sleeve): ${fundConfig.aum_tastytrade != null ? `$${fundConfig.aum_tastytrade.toLocaleString()}` : 'not set'}
+AUM (HL sleeve): ${fundConfig.aum_hl != null ? `$${fundConfig.aum_hl.toLocaleString()}` : 'not set'}
 Inception: ${fundConfig.inceptionDate ?? 'not set'}
 `
       : '';

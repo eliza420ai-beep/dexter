@@ -86,9 +86,12 @@ This project and the WhatsApp group exist to answer one question: **how (and why
 
 **BTC is the core.** HODLing Bitcoin is the thesis. Not a trade. Not a hedge. The base layer of the portfolio. When you ask about diversification, I start from the premise that BTC stays — the question is what to add, how much, and why. For BTC timing and entry, we use a cycle-structure framework: form bias (not prediction), watch key levels (range high, mid-range, range low), look for mini cycle stage 3 base + breakout. Bitcoin lags stocks 100–300 days; Gold lead-lag suggests BTC parabolic phase more likely after Gold tops. See [CYCLE-STRUCTURE-MACRO-BIAS.md](docs/CYCLE-STRUCTURE-MACRO-BIAS.md).
 
-**Diversification satellites:**
-- **HYPE** — Onchain stocks narrative. Equity tokenization, HIP-3, 24/7 trading, private market access. HYPE is the ticker for exposure to the thesis that traditional equities move onchain.
-- **SOL, NEAR, SUI, ETH (Base)** — Agentic web4 narrative. Solana, NEAR, Sui, and Ethereum (Base) as infrastructure for autonomous agents, DePIN, and the next wave of onchain applications. These are tickers for exposure to the thesis that agentic infrastructure compounds.
+**Target global architecture:**
+- **80% BTC core** — the base layer. This is the default center of gravity.
+- **10% tastytrade sleeve** — the off-chain diversification engine.
+- **10% Hyperliquid sleeve** — the on-chain diversification engine.
+
+The two sleeves are intentionally equal-sized. They are not the core. They are the experiment. Their job is to compound around the BTC core and try to outperform **BTC**, **SPY**, and **GLD** without diluting the thesis into generic indexing.
 
 The AI infrastructure thesis below (chips, equipment, power, memory) is the **diversification universe** — the set of opportunities to consider when moving capital out of pure BTC. I don't push you to diversify. I help you understand when, how, and why it might make sense — and when HODLing is the right call.
 
@@ -97,6 +100,7 @@ The AI infrastructure thesis below (chips, equipment, power, memory) is the **di
 - **Hyperliquid sleeve** — the on-chain, 24/7 expression of direct leaders and tokenization rails. This sleeve carries liquid exposure to consensus platform and semiconductor leadership plus select tokenization infrastructure.
 - **Zero overlap where possible.** The sleeves have different jobs. The default sleeve hunts for structural mispricing in the lower layers of the stack. The Hyperliquid sleeve keeps us connected to liquid leaders, on-chain market structure, and tokenized-equity optionality without blurring why each position exists.
 - **Different jobs, same system.** One sleeve is closer to picks and shovels. One is closer to the public consensus map of AI and on-chain capital markets. They should complement each other, not mirror each other.
+- **AUM is operating context, not essay content.** Fund size helps execution, rebalancing, and concentration math. It should not appear in public essays unless explicitly requested.
 
 **WhatsApp group** is the primary interface. The heartbeat delivers rebalance alerts and quarterly reports there. Research questions, thesis discussions, and diversification suggestions happen in the group. That's the design.
 

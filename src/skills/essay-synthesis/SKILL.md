@@ -77,6 +77,16 @@ Read the current `PORTFOLIO.md` and `PORTFOLIO-HYPERLIQUID.md` whenever they exi
 
 **Extract:** current weights, overlap rules, top positions, ballast names, sleeve split, and the "Not in the portfolio — and why" reasoning. Use these as the structural evidence layer. When quarterly attribution exists, use the sleeves to keep the essay aligned with the current book. When quarterly attribution is missing, use them as the main structure source.
 
+### 1.5b AUM rule for essays
+
+- Do **not** use fund-config AUM, sleeve AUM, or dollar account sizes in the essay unless the user explicitly asks for them
+- Treat AUM as internal operating context, not publishable essay material
+- If you need to explain portfolio architecture, use the structural target split:
+  - `80% BTC core`
+  - `10% tastytrade sleeve`
+  - `10% Hyperliquid sleeve`
+- Frame the two sleeves as equally weighted experimental diversification engines whose bar is to outperform `SPY`, `GLD`, and `BTC`
+
 ### 1.6 VOICE.md and VOICE_DETAILED.md
 Read `docs/VOICE.md` and `docs/VOICE_DETAILED.md` explicitly for every essay invocation, even if related voice guidance is already present in the system prompt.
 
@@ -116,7 +126,7 @@ Use **"Thesis → Evidence → System mapping → Implication → Close"** struc
 Use **"Current book → Committee challenge → Thesis defense → Decision layer → Invalidation → Close"** structure:
 
 1. **Opening hook** — One sharp sentence about the current book or the committee disagreement.
-2. **Thesis map** — What the current sleeves are actually betting on, with precise weights and category structure. Explicitly use the `SOUL.md` two-sleeve architecture: default / tastytrade sleeve = underpriced bottlenecks, Hyperliquid sleeve = on-chain direct leaders + tokenization rails, zero overlap where possible.
+2. **Thesis map** — What the current sleeves are actually betting on, with precise weights and category structure. Explicitly use the `SOUL.md` two-sleeve architecture: `80% BTC core`, `10% tastytrade sleeve`, `10% Hyperliquid sleeve`; default / tastytrade sleeve = underpriced bottlenecks, Hyperliquid sleeve = on-chain direct leaders + tokenization rails, zero overlap where possible.
 3. **Committee challenge** — What AIHF rejected, with agreement %, conflict count, and the most important disagreements.
 4. **Decision layer** — What stays, what gets questioned, what still needs real-world performance evidence. Use `SOUL.md` calibration logic explicitly: second-system disagreement affects sizing and timing first, not automatic thesis invalidation. Use gold strength as a regime signal, not a portfolio identity.
 5. **Risk + invalidation** — What would prove the current book wrong before the quarterly report arrives.
@@ -150,6 +160,7 @@ See VOICE_DETAILED.md for full guidance on this mode.
 - No semicolons. No transition words between sections.
 - Bold for key terms on first introduction only.
 - Numbers are precise: "$885 million" not "a massive position." "14.9%" not "significant." "-9.45 points" not "the main drag."
+- Never disclose fund AUM, sleeve AUM, or account dollar sizes unless the user explicitly asks for that in the essay
 - No: "exciting opportunity," "massive upside," "we're bullish on," "consider adding," "you might consider."
 - Never: utilize, synergy, landscape, ecosystem, stakeholder, scalable, actionable, bandwidth, holistic, innovative, robust, streamline, cutting-edge, best-in-class, thought leader, furthermore, moreover, additionally, consequently, nevertheless.
 - Never start with: a definition, a dictionary quote, "In this essay we will...", a disclaimer.

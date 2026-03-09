@@ -57,7 +57,7 @@ export class IntroComponent extends Container {
     this.addChild(this.modelText);
     this.addChild(
       new Text(
-        `${theme.muted('Loop: ')}${theme.primary('/full-loop')}${theme.muted(' · ')}${theme.primary('/write-essay')}${theme.muted(' · ')}${theme.primary('/close-loop')}`,
+        `${theme.muted('Loop: ')}${theme.primary('/btc-temp-check')}${theme.muted(' · ')}${theme.primary('/write-essay')}${theme.muted(' · ')}${theme.primary('/close-loop')}`,
         0,
         0,
       ),
@@ -71,7 +71,7 @@ export class IntroComponent extends Container {
     );
     this.addChild(
       new Text(
-        `${theme.muted('Track: ')}${theme.primary('/weekly')}${theme.muted(' · ')}${theme.primary('/quarterly')}${theme.muted(' · options: ')}${theme.primary('/options-tastytrade')}${theme.muted(' · ')}${theme.primary('/options-hl')}${theme.muted(' · aliases: /LFG /retro /options /hypersurface')}`,
+        `${theme.muted('Track: ')}${theme.primary('/weekly')}${theme.muted(' · ')}${theme.primary('/quarterly')}${theme.muted(' · options: ')}${theme.primary('/options-tastytrade')}${theme.muted(' · ')}${theme.primary('/options-hl')}`,
         0,
         0,
       ),

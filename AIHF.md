@@ -101,6 +101,8 @@ If you want a second opinion on **one specific ticker** from the Dexter terminal
 
 Instead, explicitly tell Dexter to call `aihf_double_check` with only one included ticker.
 
+If the ticker is really a **BTC proxy** rather than a normal equity idea, read `BTC.md` first. The repo treats `IBIT` as a proxy input for BTC temp checks, not as the doctrinal center of the thesis.
+
 ### Default / tastytrade sleeve ticker
 
 Use this when the ticker belongs to the default sleeve:
@@ -122,6 +124,23 @@ Do not read PORTFOLIO-HYPERLIQUID.md.
 Set hyperliquid_included to [{"ticker":"NVDA","weight":100}], sleeve=hyperliquid, top_n_included=1, analyst_preset=lean.
 Return the second-opinion summary and saved filename.
 ```
+
+### BTC proxy check via `IBIT`
+
+Use this when you want AIHF to act as a second system for the BTC core:
+
+```text
+Use aihf_double_check action=run for one ticker only: IBIT.
+Do not read PORTFOLIO.md.
+Set default_included to [{"ticker":"IBIT","weight":100}], sleeve=default, top_n_included=1, analyst_preset=lean.
+Return the second-opinion summary and saved filename.
+```
+
+Important:
+
+- this is a **proxy disagreement check**, not the full BTC decision
+- the final BTC call should also consider `SOUL.md`, concentration, and BTC vs GLD vs SPY regime
+- for the full framework, use `BTC.md`
 
 ### Why this shape matters
 
