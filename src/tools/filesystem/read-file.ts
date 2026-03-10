@@ -50,7 +50,27 @@ export const readFileTool = new DynamicStructuredTool({
     });
     const absolutePath = resolveReadPath(sandboxPath, cwd);
 
-    await access(absolutePath, constants.R_OK);
+    try {
+      await access(absolutePath, constants.R_OK);
+    } catch (err: any) {
+      if (err?.code === 'ENOENT') {
+        return formatToolResult({
+          path: input.path,
+          content: `File not found: ${input.path}`,
+          truncated: false,
+          totalLines: 0,
+        });
+      }
+      if (err?.code === 'EISDIR') {
+        return formatToolResult({
+          path: input.path,
+          content: `Path is a directory, not a file: ${input.path}`,
+          truncated: false,
+          totalLines: 0,
+        });
+      }
+      throw err;
+    }
 
     const textContent = (await readFile(absolutePath)).toString('utf-8');
     const allLines = textContent.split('\n');
