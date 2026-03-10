@@ -11,6 +11,11 @@ export class IntroComponent extends Container {
   constructor(model: string) {
     super();
 
+    const tastytradeConfigured = Boolean(
+      process.env.TASTYTRADE_CLIENT_ID && process.env.TASTYTRADE_CLIENT_SECRET,
+    );
+    const hyperliquidConfigured = Boolean(process.env.HYPERLIQUID_ACCOUNT_ADDRESS);
+
     const welcomeText = 'Welcome to Dexter';
     const versionText = ` v${packageJson.version}`;
     const fullText = welcomeText + versionText;
@@ -57,7 +62,7 @@ export class IntroComponent extends Container {
     this.addChild(this.modelText);
     this.addChild(
       new Text(
-        `${theme.muted('Loop: ')}${theme.primary('/btc-temp-check')}${theme.muted(' · ')}${theme.primary('/write-essay')}${theme.muted(' · ')}${theme.primary('/close-loop')}`,
+        `${theme.muted('Loop: ')}${theme.primary('/write-essay')}${theme.muted(' · ')}${theme.primary('/close-loop')}`,
         0,
         0,
       ),
@@ -83,6 +88,24 @@ export class IntroComponent extends Container {
         0,
       ),
     );
+    if (tastytradeConfigured) {
+      this.addChild(
+        new Text(
+          `${theme.muted('Tastytrade: ')}${theme.primary('/tastytrade-status')}${theme.muted(' · ')}${theme.primary('/theta-help')}${theme.muted(' · ')}${theme.primary('/theta-risk')}${theme.muted(' · ')}${theme.primary('/theta-scan')}${theme.muted(' · ')}${theme.primary('/theta-preview')}${theme.muted(' · ')}${theme.primary('/theta-roll')}`,
+          0,
+          0,
+        ),
+      );
+    }
+    if (hyperliquidConfigured) {
+      this.addChild(
+        new Text(
+          `${theme.muted('Hyperliquid: ')}${theme.primary('/suggest-hl')}${theme.muted(' · ')}${theme.primary('/hl-report')}${theme.muted(' · ')}${theme.primary('/hl-essay')}${theme.muted(' · ')}${theme.primary('/substack-draft-hl')}`,
+          0,
+          0,
+        ),
+      );
+    }
     this.setModel(model);
   }
 
