@@ -10,7 +10,7 @@ import { KNOWN_HL_SYMBOLS } from './hl-fd-mapping.js';
 import { computeHLPeriodReturns } from './hyperliquid-performance-tool.js';
 
 const DEXTER = join(homedir(), '.dexter');
-const DEFAULT_PORTFOLIO_PATH = join(DEXTER, 'PORTFOLIO-HYPERLIQUID.md');
+const DEFAULT_PORTFOLIO_PATH = join(DEXTER, 'portfolios', 'PORTFOLIO-HYPERLIQUID.md');
 const DEFAULT_HEARTBEAT_PATH = join(DEXTER, 'HEARTBEAT.md');
 const DEFAULT_SOUL_HL_PATH = join(DEXTER, 'SOUL-HL.md');
 const FUND_CONFIG_PATH = join(DEXTER, 'fund-config.json');
@@ -30,7 +30,7 @@ Deterministic Hyperliquid portfolio operations. Use for weekly rebalance checks 
 - After editing HEARTBEAT.md or SOUL-HL.md: call validate_target to check the target table format.
 
 ## Live sync (Phase 9)
-When HYPERLIQUID_ACCOUNT_ADDRESS is set, hyperliquid_sync_portfolio and hyperliquid_positions are available. Prefer calling hyperliquid_sync_portfolio with write_to_file=true before rebalance_check or quarterly_summary so this tool operates on current on-chain holdings; otherwise it uses ~/.dexter/PORTFOLIO-HYPERLIQUID.md as-is.
+When HYPERLIQUID_ACCOUNT_ADDRESS is set, hyperliquid_sync_portfolio and hyperliquid_positions are available. Prefer calling hyperliquid_sync_portfolio with write_to_file=true before rebalance_check or quarterly_summary so this tool operates on current on-chain holdings; otherwise it uses ~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md as-is.
 `.trim();
 
 export interface DriftRow {

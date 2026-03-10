@@ -71,6 +71,13 @@ export class IntroComponent extends Container {
     );
     this.addChild(
       new Text(
+        `${theme.muted('Theses: ')}${theme.primary('/thesis')}${theme.muted(' · ')}${theme.primary('/refresh-thesis')}${theme.muted(' · ')}${theme.primary('/portfolio-theses')}`,
+        0,
+        0,
+      ),
+    );
+    this.addChild(
+      new Text(
         `${theme.muted('Track: ')}${theme.primary('/weekly')}${theme.muted(' · ')}${theme.primary('/quarterly')}${theme.muted(' · options: ')}${theme.primary('/options-tastytrade')}${theme.muted(' · ')}${theme.primary('/options-hl')}`,
         0,
         0,

@@ -246,7 +246,7 @@ Use `save_report`.
 
 Filename:
 
-- `BTC-TEMP-CHECK-YYYY-MM-DD.md`
+- `BTC-TEMP-CHECK-YYYY-MM-DD.md` (saved under `.dexter/temp-checks/`)
 
 Return:
 

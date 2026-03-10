@@ -24,8 +24,9 @@ Read all available source reports from `.dexter/`, plus the root thesis and voic
 
 Important tool rule:
 - `.dexter` is a directory. Do not call `ReadFile` on `.dexter` itself.
-- First enumerate matching files in `.dexter/`, then read the specific markdown files you need.
-- Only call `ReadFile` on concrete file paths such as `.dexter/QUARTERLY-REPORT-2026-Q1.md`.
+- Do **not** call `ReadFile` on subdirectories like `.dexter/reports/` or `.dexter/portfolios/` either.
+- First enumerate matching files in `.dexter/` and `.dexter/reports/` (e.g. list directory contents), then read the specific markdown files you need.
+- Only call `ReadFile` on concrete file paths such as `.dexter/reports/QUARTERLY-REPORT-2026-Q1.md`.
 
 You need at minimum one of:
 - a quarterly report, or
@@ -87,7 +88,21 @@ Read the current `PORTFOLIO.md` and `PORTFOLIO-HYPERLIQUID.md` whenever they exi
   - `10% Hyperliquid sleeve`
 - Frame the two sleeves as equally weighted experimental diversification engines whose bar is to outperform `SPY`, `GLD`, and `BTC`
 
-### 1.6 VOICE.md and VOICE_DETAILED.md
+### 1.6 Stock thesis artifacts (when available)
+
+Whenever possible, augment the above with saved stock thesis artifacts from `.dexter/stock-theses/`:
+
+- Use the `stock_thesis` tool with `action=list` to see which tickers already have theses.
+- For any major contributor (top or bottom) in the quarter, use `stock_thesis` with `action=view` and `ticker` to read its thesis.
+- Extract:
+  - the one-paragraph thesis
+  - role in portfolio
+  - key risks and invalidation
+  - any explicit “Why now” timing notes.
+
+Use these artifacts as durable structural context when explaining why specific stock bets worked or failed; do not reinvent stock-level theses from scratch if a good artifact already exists.
+
+### 1.7 VOICE.md and VOICE_DETAILED.md
 Read `docs/VOICE.md` and `docs/VOICE_DETAILED.md` explicitly for every essay invocation, even if related voice guidance is already present in the system prompt.
 
 **Extract:** essay mode selection, pronoun guidance, paragraph length limits, opening/closing patterns, forbidden words, rhetorical patterns, and the required `"Sixty-seven."` ending.

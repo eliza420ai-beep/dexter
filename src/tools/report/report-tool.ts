@@ -1,13 +1,14 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { z } from 'zod';
-import { dexterPath } from '../../utils/paths.js';
+import { mkdirSync, existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname } from 'node:path';
+import { dexterPath, dexterReportPath, dexterTempCheckPath } from '../../utils/paths.js';
 
-const DEXTER_DIR = dexterPath();
 const ESSAY_HISTORY_PATH = dexterPath('essay-history.json');
 
 export const REPORT_TOOL_DESCRIPTION = `
-Save reports to .dexter/ for persistence and essay workflow.
+Save reports to .dexter/reports/ (or .dexter/temp-checks/ for BTC temp checks) for persistence and essay workflow.
 
 ## When to Use
 
@@ -17,7 +18,7 @@ Save reports to .dexter/ for persistence and essay workflow.
 
 ## Actions
 
-- save: Write content to .dexter/ (filename provided as argument). Creates .dexter if needed.
+- save: Write content to .dexter/reports/ (filename provided as argument), or .dexter/temp-checks/ for BTC temp checks. Creates directories if needed.
 
 ## Filename Convention
 
@@ -28,7 +29,9 @@ Save reports to .dexter/ for persistence and essay workflow.
 const reportSchema = z.object({
   filename: z
     .string()
-    .describe('Filename only (e.g. QUARTERLY-REPORT-2026-Q1.md). Saved to .dexter/'),
+    .describe(
+      'Filename only (e.g. QUARTERLY-REPORT-2026-Q1.md). Saved to .dexter/reports/ (or .dexter/temp-checks/ for BTC-TEMP-CHECK-*).',
+    ),
   content: z.string().describe('Full report content (markdown).'),
 });
 
@@ -41,14 +44,20 @@ export const reportTool = new DynamicStructuredTool({
     if (!input.filename.endsWith('.md')) {
       return 'Error: filename should end with .md';
     }
-    const filePath = dexterPath(input.filename);
-    if (!existsSync(DEXTER_DIR)) {
-      mkdirSync(DEXTER_DIR, { recursive: true });
+    let filePath: string;
+    if (input.filename.startsWith('BTC-TEMP-CHECK-')) {
+      filePath = dexterTempCheckPath(input.filename);
+    } else {
+      filePath = dexterReportPath(input.filename);
+    }
+    const dir = dirname(filePath);
+    if (!existsSync(dir)) {
+      mkdirSync(dir, { recursive: true });
     }
     writeFileSync(filePath, input.content, 'utf-8');
     const historyNote = updateEssayHistoryIfDraft(input.filename, input.content);
     const suffix = historyNote ? ` ${historyNote}` : '';
-    return `Saved report to .dexter/${input.filename} (${input.content.length} characters).${suffix}`;
+    return `Saved report to ${filePath} (${input.content.length} characters).${suffix}`;
   },
 });
 

@@ -14,14 +14,14 @@ import { callAIHF, AihfError } from './aihf-api.js';
 import { comparePortfolioVsAihf, renderDoubleCheckMarkdown } from './aihf-double-check.js';
 import { recordRun } from './feedback.js';
 import { parsePortfolioMarkdown } from '../../utils/portfolio-parse.js';
-import { dexterPath } from '../../utils/paths.js';
+import { dexterPath, dexterPortfolioPath } from '../../utils/paths.js';
 import { getLegacyPortfolioPath } from '../portfolio/portfolio-tool.js';
 import type { TickerEntry, ExcludedEntry, DoubleCheckResult } from './types.js';
 import type { AnalystPreset } from './aihf-graph.js';
 
 const DEXTER_DIR = dexterPath();
-const PORTFOLIO_MD_PATH = dexterPath('PORTFOLIO.md');
-const PORTFOLIO_HL_PATH = dexterPath('PORTFOLIO-HYPERLIQUID.md');
+const PORTFOLIO_MD_PATH = dexterPortfolioPath('PORTFOLIO.md');
+const PORTFOLIO_HL_PATH = dexterPortfolioPath('PORTFOLIO-HYPERLIQUID.md');
 
 // ---------------------------------------------------------------------------
 // Tool description (injected into system prompt via registry)
@@ -42,7 +42,7 @@ Run AI Hedge Fund's analyst graph as a **second opinion** on Dexter's portfolio.
   - Agreement score (% of included names AIHF confirms)
   - High-conviction conflicts (AIHF strongly disagrees with Dexter)
   - Excluded but interesting (names Dexter left out that AIHF likes)
-  Saves the report to .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md
+  Saves the report to .dexter/reports/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md
 
 - **view_last**: Read the most recent double-check report from disk.
 
@@ -51,6 +51,7 @@ Run AI Hedge Fund's analyst graph as a **second opinion** on Dexter's portfolio.
 - This is **advisory only**. Never auto-modify PORTFOLIO.md or PORTFOLIO-HYPERLIQUID.md based on AIHF output.
 - If tickers are not provided, the tool reads current PORTFOLIO.md and PORTFOLIO-HYPERLIQUID.md.
 - Normal use should prefer one sleeve at a time, top positions only, and the lean analyst set.
+- For deeper context on any single equity the committee flags (conflict or excluded-but-interesting), you may read its saved stock thesis via stock_thesis (view) when available instead of re-deriving a fresh thesis from scratch.
 - AIHF runs may take 1-3+ minutes. If it times out, the tool suggests a manual CLI command.
 - Requires AIHF backend running and AIHF_API_URL configured.
 `.trim();

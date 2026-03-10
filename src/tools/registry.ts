@@ -14,6 +14,7 @@ import { heartbeatTool, HEARTBEAT_TOOL_DESCRIPTION } from './heartbeat/heartbeat
 import { memoryGetTool, MEMORY_GET_DESCRIPTION, memorySearchTool, MEMORY_SEARCH_DESCRIPTION, memoryUpdateTool, MEMORY_UPDATE_DESCRIPTION } from './memory/index.js';
 import { portfolioTool, PORTFOLIO_TOOL_DESCRIPTION } from './portfolio/portfolio-tool.js';
 import { reportTool, REPORT_TOOL_DESCRIPTION } from './report/report-tool.js';
+import { stockThesisTool, STOCK_THESIS_DESCRIPTION } from './stock-thesis/stock-thesis-tool.js';
 import { fundConfigTool, FUND_CONFIG_TOOL_DESCRIPTION } from './fund-config/fund-config-tool.js';
 import { performanceHistoryTool, PERFORMANCE_HISTORY_TOOL_DESCRIPTION } from './performance-history/performance-history-tool.js';
 import {
@@ -189,6 +190,11 @@ export function getToolRegistry(model: string, profile: ToolProfile = 'full'): R
       name: 'save_report',
       tool: reportTool,
       description: REPORT_TOOL_DESCRIPTION,
+    },
+    {
+      name: 'stock_thesis',
+      tool: stockThesisTool,
+      description: STOCK_THESIS_DESCRIPTION,
     },
     {
       name: 'fund_config',

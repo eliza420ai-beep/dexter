@@ -39,7 +39,7 @@ Cancel an open order by order id. REQUIRES EXPLICIT USER APPROVAL: call only whe
 `.trim();
 
 export const TASTYTRADE_SYNC_PORTFOLIO_DESCRIPTION = `
-Sync portfolio from tastytrade: fetch positions and balances, build a PORTFOLIO.md-style table (Ticker | Weight | Layer | Tier), and optionally write to ~/.dexter/PORTFOLIO.md. Use when the user says "sync my portfolio from tastytrade" or "update PORTFOLIO from broker". Weights are derived from position value / total equity; Layer and Tier are left as — (user or SOUL.md can fill). Set write_to_portfolio=true to overwrite PORTFOLIO.md; otherwise returns markdown for the user to review.
+Sync portfolio from tastytrade: fetch positions and balances, build a PORTFOLIO.md-style table (Ticker | Weight | Layer | Tier), and optionally write to ~/.dexter/portfolios/PORTFOLIO.md. Use when the user says "sync my portfolio from tastytrade" or "update PORTFOLIO from broker". Weights are derived from position value / total equity; Layer and Tier are left as — (user or SOUL.md can fill). Set write_to_portfolio=true to overwrite PORTFOLIO.md; otherwise returns markdown for the user to review.
 `.trim();
 
 export const TASTYTRADE_POSITION_RISK_DESCRIPTION = `

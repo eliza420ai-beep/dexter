@@ -24,20 +24,21 @@ Read the current quarter's artifacts first, then any prior recursive artifacts.
 
 Important tool rules:
 - `.dexter` is a directory. Do not call `ReadFile` on `.dexter` itself.
-- Enumerate candidate files in `.dexter/`, then read only resolved file paths.
+- Do **not** call `ReadFile` on subdirectories like `.dexter/reports/` or `.dexter/portfolios/` either.
+- First enumerate candidate files in `.dexter/` and `.dexter/reports/` (e.g. list directory contents), then call `ReadFile` only on concrete markdown paths such as `.dexter/reports/QUARTERLY-REPORT-2026-Q1.md`.
 - Prefer concrete files over vague references.
 
 ### Required current-quarter inputs
 
 Read these when available:
-1. Latest main quarterly report: `.dexter/QUARTERLY-REPORT-YYYY-QN.md`
-2. Latest Hyperliquid quarterly report: `.dexter/QUARTERLY-REPORT-HL-YYYY-QN.md`
-3. Latest AIHF report for the same period/session: `.dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md`
+1. Latest main quarterly report: `.dexter/reports/QUARTERLY-REPORT-YYYY-QN.md`
+2. Latest Hyperliquid quarterly report: `.dexter/reports/QUARTERLY-REPORT-HL-YYYY-QN.md`
+3. Latest AIHF report for the same period/session: `.dexter/reports/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md`
 4. Latest essay draft for the period: `.dexter/ESSAY-DRAFT-YYYY-QN.md`
 5. Published essay text or published URL if the user provides one
 6. Root `SOUL.md`
-7. Current `.dexter/PORTFOLIO.md`
-8. Current `.dexter/PORTFOLIO-HYPERLIQUID.md`
+7. Current `.dexter/portfolios/PORTFOLIO.md`
+8. Current `.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md`
 
 ### Required prior recursive inputs
 

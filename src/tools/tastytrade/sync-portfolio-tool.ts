@@ -1,6 +1,4 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { z } from 'zod';
 import {
@@ -12,9 +10,10 @@ import {
   ensureSessionSync,
   isTickerTradableOnHyperliquid,
 } from './utils.js';
-import { getPortfolioPath, writePortfolioContent } from '../portfolio/portfolio-tool.js';
+import { dexterPortfolioPath } from '../../utils/paths.js';
+import { writePortfolioContent } from '../portfolio/portfolio-tool.js';
 
-const PORTFOLIO_MD_PATH = join(homedir(), '.dexter', 'PORTFOLIO.md');
+const PORTFOLIO_MD_PATH = dexterPortfolioPath('PORTFOLIO.md');
 
 function readExistingTargetsAndMeta(): Map<string, { target: number; layer: string; tier: string }> {
   const out = new Map<string, { target: number; layer: string; tier: string }>();
@@ -56,7 +55,7 @@ export const tastytradeSyncPortfolioTool = new DynamicStructuredTool({
       .boolean()
       .optional()
       .default(false)
-      .describe('If true, write the generated table to ~/.dexter/PORTFOLIO.md. Otherwise return markdown only.'),
+      .describe('If true, write the generated table to ~/.dexter/portfolios/PORTFOLIO.md. Otherwise return markdown only.'),
   }),
   func: async (input) => {
     let accountNumber: string | null | undefined = input.account_number;

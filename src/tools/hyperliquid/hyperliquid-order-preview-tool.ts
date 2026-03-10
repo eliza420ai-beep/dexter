@@ -9,7 +9,7 @@ import { loadHLExecutionPolicy, validateIntentAgainstPolicy } from './hl-executi
 import type { HLExecutionIntent, HLOrderType, HLTimeInForce } from './hyperliquid-execution-types.js';
 
 const DEXTER = join(homedir(), '.dexter');
-const DEFAULT_PORTFOLIO_PATH = join(DEXTER, 'PORTFOLIO-HYPERLIQUID.md');
+const DEFAULT_PORTFOLIO_PATH = join(DEXTER, 'portfolios', 'PORTFOLIO-HYPERLIQUID.md');
 
 const MIN_NOTIONAL_USD = 1;
 const ILLIQUID_VOLUME_THRESHOLD = 10_000;

@@ -263,11 +263,11 @@ export async function runCli() {
     'Write a Substack-ready essay draft from existing research artifacts.',
     '',
     'Source priority is mandatory:',
-    '1) latest .dexter/QUARTERLY-REPORT-YYYY-QN.md',
-    '2) latest .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md',
+    '1) latest .dexter/reports/QUARTERLY-REPORT-YYYY-QN.md',
+    '2) latest .dexter/reports/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md',
     '3) root SOUL.md (fallback: .dexter/SOUL.md, then bundled SOUL)',
-    '4) current .dexter/PORTFOLIO.md',
-    '5) current .dexter/PORTFOLIO-HYPERLIQUID.md',
+    '4) current .dexter/portfolios/PORTFOLIO.md',
+    '5) current .dexter/portfolios/PORTFOLIO-HYPERLIQUID.md',
     '6) docs/VOICE.md',
     '7) docs/VOICE_DETAILED.md so the draft follows ikigaistudio voice exactly',
     '',
@@ -324,13 +324,13 @@ export async function runCli() {
     'Close the quarterly recursion loop after publication.',
     '',
     'Read these sources in order:',
-    '1) latest .dexter/QUARTERLY-REPORT-YYYY-QN.md',
-    '2) latest .dexter/QUARTERLY-REPORT-HL-YYYY-QN.md if it exists',
-    '3) latest .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md if it exists',
-    '4) latest .dexter/ESSAY-DRAFT-YYYY-QN.md',
+    '1) latest .dexter/reports/QUARTERLY-REPORT-YYYY-QN.md',
+    '2) latest .dexter/reports/QUARTERLY-REPORT-HL-YYYY-QN.md if it exists',
+    '3) latest .dexter/reports/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md if it exists',
+    '4) latest .dexter/reports/ESSAY-DRAFT-YYYY-QN.md',
     '5) the published essay text or URL if I provided one',
     '6) root SOUL.md',
-    '7) current .dexter/PORTFOLIO.md and .dexter/PORTFOLIO-HYPERLIQUID.md',
+    '7) current .dexter/portfolios/PORTFOLIO.md and .dexter/portfolios/PORTFOLIO-HYPERLIQUID.md',
     '8) previous quarter THESIS-DELTA-YYYY-QN.md and NEXT-QUARTER-TESTS-YYYY-QN.md if they exist',
     '',
     'Invoke skill "essay-postmortem".',
@@ -393,15 +393,15 @@ export async function runCli() {
     '/double-check': `Run an AI Hedge Fund second opinion on my current portfolios.
 
 Use aihf_double_check with action=run.
-- If explicit included/excluded tickers are not provided, read current .dexter/PORTFOLIO.md and .dexter/PORTFOLIO-HYPERLIQUID.md
+- If explicit included/excluded tickers are not provided, read current .dexter/portfolios/PORTFOLIO.md and .dexter/portfolios/PORTFOLIO-HYPERLIQUID.md
 - Return agreement summary, high-conviction conflicts, and excluded-but-interesting names
-- Confirm the saved report filename (.dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md)
+- Confirm the saved report filename (.dexter/reports/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md)
 - Keep this advisory only; do not auto-modify portfolios`,
     '/write-essay': WRITE_ESSAY_SHORTCUT,
     '/close-loop': CLOSE_LOOP_SHORTCUT,
     '/btc-temp-check': BTC_TEMP_CHECK_SHORTCUT,
     '/full-loop': FULL_LOOP_SHORTCUT,
-    '/weekly': `Write a weekly performance report for my portfolio. Use .dexter/PORTFOLIO.md for my holdings (or the portfolio you suggested last time). For each position, fetch the price change over the past 7 days (start_date and end_date). Also fetch the 7-day performance for:
+    '/weekly': `Write a weekly performance report for my portfolio. Use .dexter/portfolios/PORTFOLIO.md for my holdings (or the portfolio you suggested last time). For each position, fetch the price change over the past 7 days (start_date and end_date). Also fetch the 7-day performance for:
 - BTC-USD (Bitcoin)
 - GLD (Gold ETF)
 - SPY (S&P 500 ETF)
@@ -412,7 +412,7 @@ Output:
 3. Outperformance/underperformance vs each benchmark
 4. Best and worst performers in the portfolio
 5. One-line takeaway: did the portfolio beat BTC, Gold, and the S&P 500 this week?`,
-    '/quarterly': `Write a quarterly performance report for my portfolio. Use .dexter/PORTFOLIO.md. Fetch price data for the past 90 days (or quarter-to-date) for all holdings plus BTC-USD, GLD, and SPY. Include:
+    '/quarterly': `Write a quarterly performance report for my portfolio. Use .dexter/portfolios/PORTFOLIO.md. Fetch price data for the past 90 days (or quarter-to-date) for all holdings plus BTC-USD, GLD, and SPY. Include:
 - Portfolio return (weighted) for the quarter
 - Benchmark returns: BTC, Gold (GLD), S&P 500 (SPY)
 - Outperformance/underperformance vs each
@@ -421,18 +421,18 @@ Output:
 - Regime assessment: any sizing adjustments needed?
 - Outlook for next quarter
 - YTD and since-inception (if performance_history has data): compute and include vs BTC, SPY, GLD
-- Save the report to .dexter/QUARTERLY-REPORT-YYYY-QN.md using the save_report tool (e.g. QUARTERLY-REPORT-2026-Q1.md)
+- Save the report to .dexter/reports/QUARTERLY-REPORT-YYYY-QN.md using the save_report tool (e.g. QUARTERLY-REPORT-2026-Q1.md)
 - Call performance_history record_quarter to append this quarter's returns (period, portfolio, btc, spy, gld as decimals)`,
     '/suggest-hl': `Suggest and save only the Hyperliquid HIP-3 sleeve (portfolio_id=hyperliquid). Exclude core crypto assets (BTC, SOL, HYPE, ETH, SUI, NEAR), include target weights + concise rationale, and include "Not in the portfolio — and why". Save via portfolio tool.`,
-    '/hl-report': `Write a quarterly performance report for my Hyperliquid portfolio only. Use .dexter/PORTFOLIO-HYPERLIQUID.md. Map HL symbols to FD tickers per docs/HYPERLIQUID-SYMBOL-MAP.md. Fetch quarter-to-date (or 90-day) prices for each position plus BTC-USD, GLD, SPY. Include:
+    '/hl-report': `Write a quarterly performance report for my Hyperliquid portfolio only. Use .dexter/portfolios/PORTFOLIO-HYPERLIQUID.md. Map HL symbols to FD tickers per docs/HYPERLIQUID-SYMBOL-MAP.md. Fetch quarter-to-date (or 90-day) prices for each position plus BTC-USD, GLD, SPY. Include:
 - Portfolio return vs BTC, SPY, GLD (and hl_basket if computable)
 - Category attribution: Core, L1, AI infra, tokenization
 - Best and worst performers
 - Regime assessment and outlook
 - YTD and since-inception if performance_history has data
-- Save to .dexter/QUARTERLY-REPORT-HL-YYYY-QN.md via save_report
+- Save to .dexter/reports/QUARTERLY-REPORT-HL-YYYY-QN.md via save_report
 - Call performance_history record_quarter with portfolio_hl (and optionally hl_basket)`,
-    '/hl-essay': `Using the Hyperliquid quarterly report from .dexter/QUARTERLY-REPORT-HL-*.md (or the HL report you just produced), write a 600–800 word reflection essay on the on-chain stocks thesis. Structure:
+    '/hl-essay': `Using the Hyperliquid quarterly report from .dexter/reports/QUARTERLY-REPORT-HL-*.md (or the HL report you just produced), write a 600–800 word reflection essay on the on-chain stocks thesis. Structure:
 1. What the numbers say — which HIP-3 categories validated (Core, L1, AI infra, tokenization), which didn't
 2. The regime problem — what BTC/Gold/SPY told us for on-chain exposure
 3. The machine's recommendation — sizing adjustments for the HL portfolio
@@ -440,7 +440,7 @@ Output:
 
 Voice: structural thinking, precise numbers, blunt assessment. No hype. Output markdown ready for Claude polish or direct publish.`,
     '/substack-draft-hl': `Run a Hyperliquid-first Substack draft pipeline:
-1) Ensure .dexter/PORTFOLIO-HYPERLIQUID.md exists. If missing, tell me to run /suggest-hl first and stop.
+1) Ensure .dexter/portfolios/PORTFOLIO-HYPERLIQUID.md exists. If missing, tell me to run /suggest-hl first and stop.
 2) Run AIHF second opinion with aihf_double_check action=run using current included/excluded context.
 3) Invoke skill "essay-synthesis" but bias thread selection toward on-chain equities (HIP-3), tokenized stocks thesis, and on-chain vs off-chain performance tension.
 4) Source priority is mandatory: QUARTERLY-REPORT-HL-YYYY-QN.md first, then AIHF-DOUBLE-CHECK-YYYY-MM-DD.md, then SOUL-HL.md/SOUL.md.
@@ -508,6 +508,9 @@ Output format:
 - HYPE: suggested put strike, call strike, rationale + assumptions.
 - Keep it execution-ready for manual Hypersurface entry and clearly label any assumption-driven estimates.`,
     '/options-tastytrade': `Suggest options to execute on tastytrade that fit our thesis from SOUL.md. Use tastytrade_theta_scan for SOUL-aligned, non-crypto, non-HL thesis equities only: equipment, foundry-adjacent, power, memory, and networking names such as AMAT, ASML, LRCX, KLAC, VRT, CEG, MU, ANET unless THETA-POLICY explicitly narrows that list further. Do NOT treat generic policy leftovers like SPX/SPY/QQQ, IBIT, MSTY, or MSTR as thesis-fit recommendations for this shortcut. Policy is a hard block. Show the table_summary (Underlying, Strategy, Strike(s), Credit, APR-like, Prob (ITM), DTE, Breakeven, Max loss) and recommend the top 2–3 candidates with strategy type, strikes, expiration, credit, max loss, and how each fits the thesis. Do not submit any order — I will preview and confirm before submitting.`,
+    '/thesis': `Generate or refresh a full stock thesis artifact for a single equity. Parse the input following "/thesis" to extract exactly one ticker (e.g. NVDA, TSM, AMAT). Use the stock-thesis skill: gather financial_search data, filings if needed, SOUL.md context, and any existing STOCK-THESIS-<TICKER>.md via stock_thesis(action=view). Then draft a markdown thesis following the standard stock_thesis schema (frontmatter plus sections: The Thesis In One Paragraph, Why This Stock Is Different, Core Investment Case, What Has To Go Right, Valuation / Model, Risks And Mitigants, Invalidation, Why Now, Role In Portfolio). Finally, call stock_thesis with action=generate to save it. In the chat reply, summarize the thesis in 3–5 bullets and mention where it was saved.`,
+    '/portfolio-theses': `Generate or refresh stock thesis artifacts for all equities in the current tastytrade (and optionally Hyperliquid equities) sleeves. Use the stock-thesis skill in batch mode: read PORTFOLIO.md and PORTFOLIO-HYPERLIQUID.md via the portfolio tool, extract tickers, and for each one either refresh an existing thesis (if stock_thesis view returns content) or create a new one using financial_search, SOUL.md, and layer/tier context. Save each thesis with stock_thesis(action=generate). In the reply, list which tickers now have theses, which were skipped (and why), and where the files live.`,
+    '/refresh-thesis': `Refresh an existing stock thesis artifact for a single equity. Parse the input following "/refresh-thesis" to extract exactly one ticker. Use stock_thesis(action=view) to load the current thesis from .dexter/stock-theses/STOCK-THESIS-<TICKER>.md, update numbers, catalysts, risks, and timing based on the latest financial_search data and filings, then save an updated markdown thesis with stock_thesis(action=generate). In the reply, highlight what changed versus the prior thesis (numbers, regime, catalysts, invalidation).`,
     '/theta-policy': `Help me bootstrap .dexter/THETA-POLICY.md. Read docs/THETA-POLICY.example.md and docs/THETA-POLICY.md, then:
 1. show me the exact starter template
 2. explain what each field controls
@@ -523,6 +526,9 @@ Do not place any trades.`,
     '/substack-draft': '/write-essay',
     '/hypersurface': '/options-hl',
     '/options': '/options-tastytrade',
+    '/thesis': '/thesis',
+    '/portfolio-theses': '/portfolio-theses',
+    '/refresh-thesis': '/refresh-thesis',
   };
 
   const SHORTCUT_PROFILES: Record<string, AgentConfig['toolProfile']> = {
@@ -537,6 +543,20 @@ Do not place any trades.`,
     '/suggest-tastytrade': 'default',
   };
 
+  const resolveShortcut = (rawQuery: string): { shortcutKey: string; shortcutArgs: string } => {
+    const trimmed = rawQuery.trim();
+    const prefixShortcuts = ['/thesis', '/refresh-thesis', '/portfolio-theses'];
+    for (const prefix of prefixShortcuts) {
+      if (trimmed === prefix) {
+        return { shortcutKey: prefix, shortcutArgs: '' };
+      }
+      if (trimmed.startsWith(`${prefix} `)) {
+        return { shortcutKey: prefix, shortcutArgs: trimmed.slice(prefix.length).trim() };
+      }
+    }
+    return { shortcutKey: SHORTCUT_ALIASES[trimmed] ?? trimmed, shortcutArgs: '' };
+  };
+
   const handleSubmit = async (query: string) => {
     if (query.toLowerCase() === 'exit' || query.toLowerCase() === 'quit') {
       tui.stop();
@@ -549,15 +569,23 @@ Do not place any trades.`,
       return;
     }
 
-    const shortcutKey = SHORTCUT_ALIASES[query] ?? query;
+    const { shortcutKey, shortcutArgs } = resolveShortcut(query);
     const expandedQuery =
       shortcutKey === '/theta-help'
         ? buildThetaHelpQuery()
         : shortcutKey === '/tastytrade-status'
           ? buildTastytradeStatusQuery()
-          : QUERY_SHORTCUTS[shortcutKey] ?? query;
+          : QUERY_SHORTCUTS[shortcutKey]
+            ? `${QUERY_SHORTCUTS[shortcutKey]}${shortcutArgs ? `\n\nUser-provided shortcut arguments: ${shortcutArgs}` : ''}`
+            : query;
     const shortcutProfile = SHORTCUT_PROFILES[shortcutKey] ?? 'full';
-    const shortcutMaxIterations = shortcutKey === '/full-loop' ? 15 : undefined;
+    const shortcutMaxIterations =
+      shortcutKey === '/full-loop' ||
+      shortcutKey === '/thesis' ||
+      shortcutKey === '/refresh-thesis' ||
+      shortcutKey === '/portfolio-theses'
+        ? 15
+        : undefined;
 
     if (modelSelection.isInSelectionFlow() || agentRunner.pendingApproval || agentRunner.isProcessing) {
       return;

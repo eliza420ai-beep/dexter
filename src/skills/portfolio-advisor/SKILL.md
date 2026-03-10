@@ -78,8 +78,8 @@ If the top recommendation is an option strategy (e.g. put credit spread), call `
 Present a structured summary:
 
 1. **Summary table:** Position | Actual % | Target % | Gap | Tier | Action (keep/add/trim/close)
-2. **Gaps:** Underweight names, overweight names, Avoid list holdings
-3. **Top 1–3 buys:** Ticker/strategy, thesis reason, size, instrument
+2. **Gaps:** Underweight names, overweight names, Avoid list holdings, and any positions **missing a saved stock thesis** (no STOCK-THESIS-<TICKER>.md yet)
+3. **Top 1–3 buys:** Ticker/strategy, thesis reason, size, instrument. When possible, base the thesis reason on an existing stock thesis artifact (via stock_thesis view); if none exists for a high-conviction idea, explicitly note that the thesis should be written next (e.g. via /thesis NVDA).
 4. **Caveats:** Earnings dates, concentration, regime (if relevant)
 
 Keep tone aligned with Identity: accuracy over comfort, substance over performance, explicit about limits.

@@ -24,7 +24,7 @@ Compute Hyperliquid basket return and optional user HL portfolio return for a pe
 
 ## Input
 - period: e.g. "2026-Q1" (calendar quarter) or "7d" (last 7 days)
-- portfolio_path (optional): path to PORTFOLIO-HYPERLIQUID.md; default ~/.dexter/PORTFOLIO-HYPERLIQUID.md
+- portfolio_path (optional): path to PORTFOLIO-HYPERLIQUID.md; default ~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md
 
 ## Output
 - hl_basket: equal-weight return of the HL benchmark basket (decimal)
@@ -272,7 +272,7 @@ const schema = z.object({
     .string()
     .optional()
     .describe(
-      'Optional path to PORTFOLIO-HYPERLIQUID.md; default ~/.dexter/PORTFOLIO-HYPERLIQUID.md',
+      'Optional path to PORTFOLIO-HYPERLIQUID.md; default ~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md',
     ),
 });
 
@@ -284,7 +284,8 @@ export const hyperliquidPerformanceTool = new DynamicStructuredTool({
   func: async (input) => {
     const period = input.period.trim();
     const portfolioPath =
-      input.portfolio_path?.trim() || join(homedir(), '.dexter', 'PORTFOLIO-HYPERLIQUID.md');
+      input.portfolio_path?.trim() ||
+      join(homedir(), '.dexter', 'portfolios', 'PORTFOLIO-HYPERLIQUID.md');
     const result = await computeHLPeriodReturns(period, portfolioPath);
     return formatToolResult(result);
   },

@@ -3,13 +3,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { homedir } from 'node:os';
 import { z } from 'zod';
-import { dexterPath } from '../../utils/paths.js';
+import { dexterPath, dexterPortfoliosDir, dexterPortfolioPath } from '../../utils/paths.js';
 import { isTickerTradableOnHyperliquid } from '../tastytrade/utils.js';
 
-const DEXTER_DIR = dexterPath();
+const DEXTER_DIR = dexterPortfoliosDir();
 const LEGACY_DEXTER_DIR = join(homedir(), '.dexter');
-const PORTFOLIO_MD_PATH = dexterPath('PORTFOLIO.md');
-const PORTFOLIO_HL_PATH = dexterPath('PORTFOLIO-HYPERLIQUID.md');
+const PORTFOLIO_MD_PATH = dexterPortfolioPath('PORTFOLIO.md');
+const PORTFOLIO_HL_PATH = dexterPortfolioPath('PORTFOLIO-HYPERLIQUID.md');
 const LEGACY_PORTFOLIO_MD_PATH = join(LEGACY_DEXTER_DIR, 'PORTFOLIO.md');
 const LEGACY_PORTFOLIO_HL_PATH = join(LEGACY_DEXTER_DIR, 'PORTFOLIO-HYPERLIQUID.md');
 
@@ -54,8 +54,8 @@ export function writePortfolioContent(portfolioId: PortfolioId, content: string)
 export const PORTFOLIO_TOOL_DESCRIPTION = `
 Manage portfolio files. **Use two portfolios** — zero overlap between them.
 
-1. **default** (~/.dexter/PORTFOLIO.md) — Tastytrade sleeve: ONLY tickers that are NOT tradable on Hyperliquid (e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG, ANET). No TSM, MU, AAPL, MSFT, COIN, etc. If you include HL-tradable symbols by mistake, they are auto-removed and a warning is returned; the rest is saved.
-2. **hyperliquid** (~/.dexter/PORTFOLIO-HYPERLIQUID.md) — On-chain sleeve: HIP-3 onchain equities only (e.g. TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL). No BTC, SOL, HYPE, ETH, SUI, NEAR (core crypto is separate). See docs/HYPERLIQUID-SYMBOL-MAP.md.
+1. **default** (~/.dexter/portfolios/PORTFOLIO.md) — Tastytrade sleeve: ONLY tickers that are NOT tradable on Hyperliquid (e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG, ANET). No TSM, MU, AAPL, MSFT, COIN, etc. If you include HL-tradable symbols by mistake, they are auto-removed and a warning is returned; the rest is saved.
+2. **hyperliquid** (~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md) — On-chain sleeve: HIP-3 onchain equities only (e.g. TSM, NVDA, PLTR, ORCL, COIN, HOOD, CRCL). No BTC, SOL, HYPE, ETH, SUI, NEAR (core crypto is separate). See docs/HYPERLIQUID-SYMBOL-MAP.md.
 
 ## MANDATORY: Auto-Save on Suggest
 

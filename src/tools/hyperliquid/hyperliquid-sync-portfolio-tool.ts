@@ -1,13 +1,12 @@
 import { DynamicStructuredTool } from '@langchain/core/tools';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { z } from 'zod';
 import { formatToolResult } from '../types.js';
 import { getLiveAccountState, getHLAccountAddress } from './hyperliquid-account-api.js';
+import { dexterPortfoliosDir, dexterPortfolioPath } from '../../utils/paths.js';
 
-const DEXTER_DIR = join(homedir(), '.dexter');
-const DEFAULT_PORTFOLIO_HL_PATH = join(DEXTER_DIR, 'PORTFOLIO-HYPERLIQUID.md');
+const DEXTER_DIR = dexterPortfoliosDir();
+const DEFAULT_PORTFOLIO_HL_PATH = dexterPortfolioPath('PORTFOLIO-HYPERLIQUID.md');
 
 /**
  * Build portfolio markdown table: Ticker | Weight | Category | Notes
@@ -24,7 +23,7 @@ function buildPortfolioMarkdown(positions: { symbol: string; weightPct: number }
 
 export const HYPERLIQUID_SYNC_PORTFOLIO_DESCRIPTION = `
 Sync live Hyperliquid positions to portfolio markdown (same format as PORTFOLIO-HYPERLIQUID.md).
-Fetches clearinghouse state, aggregates by symbol, computes weights, and optionally writes to ~/.dexter/PORTFOLIO-HYPERLIQUID.md.
+Fetches clearinghouse state, aggregates by symbol, computes weights, and optionally writes to ~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md.
 
 ## When to Use
 - User says "sync my HL portfolio", "update PORTFOLIO-HYPERLIQUID from live", "refresh HL holdings to file".
@@ -42,7 +41,7 @@ export const hyperliquidSyncPortfolioTool = new DynamicStructuredTool({
       .boolean()
       .optional()
       .default(false)
-      .describe('If true, write the generated table to ~/.dexter/PORTFOLIO-HYPERLIQUID.md'),
+      .describe('If true, write the generated table to ~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md'),
   }),
   func: async (input) => {
     const address = getHLAccountAddress();

@@ -1,18 +1,19 @@
 import { readFile } from 'node:fs/promises';
 import { HEARTBEAT_OK_TOKEN } from './suppression.js';
-import { dexterPath } from '../../utils/paths.js';
+import { dexterPath, dexterPortfolioPath } from '../../utils/paths.js';
 import { isAIHFConfigured } from '../../tools/aihf/index.js';
 
 const HEARTBEAT_MD_PATH = dexterPath('HEARTBEAT.md');
-const PORTFOLIO_MD_PATH = dexterPath('PORTFOLIO.md');
-const PORTFOLIO_HL_PATH = dexterPath('PORTFOLIO-HYPERLIQUID.md');
+const PORTFOLIO_MD_PATH = dexterPortfolioPath('PORTFOLIO.md');
+const PORTFOLIO_HL_PATH = dexterPortfolioPath('PORTFOLIO-HYPERLIQUID.md');
 
 const DEFAULT_CHECKLIST = `- BTC — price, dominance, any material move or news that affects HODL thesis
 - HYPE — onchain stocks narrative: HIP-3, equity tokenization, Hyperliquid updates
 - SOL, NEAR, SUI, ETH (Base) — agentic web4 narrative: Solana, NEAR, Sui, Base ecosystem; DePIN, agent infrastructure news
 - Diversification signals — anything that changes the how/why of diversifying from BTC-heavy (e.g. AI infra cycle inflection, macro regime shift)
 - Major index moves (S&P 500, NASDAQ, Dow) — alert if any move more than 2% in a session
-- Breaking financial news — major earnings surprises, Fed announcements, significant market events`;
+- Breaking financial news — major earnings surprises, Fed announcements, significant market events
+- Stock thesis drift — any large change in thesis vs price/action for major equity positions; flag when a saved STOCK-THESIS-<TICKER>.md looks stale vs current data and should be refreshed (/thesis or /portfolio-theses)`;
 
 /**
  * Load .dexter/HEARTBEAT.md content.
@@ -29,7 +30,7 @@ export async function loadHeartbeatDocument(): Promise<string | null> {
 const FUND_CONFIG_PATH = dexterPath('fund-config.json');
 
 /**
- * Load ~/.dexter/PORTFOLIO.md content if it exists.
+ * Load ~/.dexter/portfolios/PORTFOLIO.md content if it exists.
  * Used for weekly rebalance checks and quarterly reports.
  */
 export async function loadPortfolioDocument(): Promise<string | null> {
@@ -41,7 +42,7 @@ export async function loadPortfolioDocument(): Promise<string | null> {
 }
 
 /**
- * Load ~/.dexter/PORTFOLIO-HYPERLIQUID.md content if it exists.
+ * Load ~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md content if it exists.
  * On-chain portfolio (HIP-3 tickers only); used for HL rebalance and quarterly reports.
  */
 export async function loadPortfolioHLDocument(): Promise<string | null> {
@@ -166,24 +167,24 @@ ${isMon ? `### Weekly Rebalance Check
 - **Regime label:** Fetch 7-day move for BTC-USD, GLD, SPY. Output one line: Regime: risk-on / risk-off / mixed. Basis: [brief reason from benchmark direction]
 - **Concentration alerts:** For both portfolios, flag any position >5% above its target weight. Recommend specific trim/add actions.
 - **Dollar rebalancing:** If ~/.dexter/fund-config.json has aum_tastytrade set, use that for main/tastytrade sleeve dollar rebalance actions. If aum_tastytrade is not set but aum is set, you may fall back to total aum. If aum_hl is set, hyperliquid_portfolio_ops rebalance_check returns suggestedDollar per HL trim/add action — use those for HL sleeve dollar recommendations. Use fund_config tool to read aum / aum_tastytrade / aum_hl if needed.
-- **Weekly newsletter draft:** If noteworthy (material moves, regime shift, rebalance needed), draft a 150–250 word Substack snippet. Save to ~/.dexter/WEEKLY-DRAFT-YYYY-MM-DD.md via save_report. Include both portfolios when both exist. Voice: structural, precise numbers, no hype (see VOICE.md)
+- **Weekly newsletter draft:** If noteworthy (material moves, regime shift, rebalance needed), draft a 150–250 word Substack snippet. Save to ~/.dexter/reports/WEEKLY-DRAFT-YYYY-MM-DD.md via save_report. Include both portfolios when both exist. Voice: structural, precise numbers, no hype (see VOICE.md)
 - If rebalancing is recommended, write a concise alert with specific actions
-- Use read_file to read ~/.dexter/PORTFOLIO.md or PORTFOLIO-HYPERLIQUID.md if not provided` : ''}
+- Use read_file to read ~/.dexter/portfolios/PORTFOLIO.md or ~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md if not provided` : ''}
 
 ${isQuarterStart ? `### Quarterly Performance Report
-- **Main portfolio:** Write a quarterly report for PORTFOLIO.md. Performance is essential: compare returns vs (1) best hedge funds, (2) stock market indexes (S&P 500, NASDAQ), (3) BTC. Include layer attribution, conviction-tier performance, regime assessment, outlook. MANDATORY: Save to ~/.dexter/QUARTERLY-REPORT-YYYY-QN.md via save_report.
-- **Hyperliquid portfolio:** If HL account is connected, call hyperliquid_sync_portfolio with write_to_file=true first so quarterly summary uses live holdings; then if PORTFOLIO-HYPERLIQUID.md exists, call hyperliquid_portfolio_ops with action=quarterly_summary and period=YYYY-QN (e.g. 2026-Q1). Use the returned quarterly payload (portfolio_hl, hl_basket) with performance_history record_quarter (along with portfolio, btc, spy, gld). Then write a SEPARATE quarterly report: portfolio return vs BTC, SPY, GLD, hl_basket; category attribution; regime, outlook. MANDATORY: Save to ~/.dexter/QUARTERLY-REPORT-HL-YYYY-QN.md via save_report.
+- **Main portfolio:** Write a quarterly report for PORTFOLIO.md. Performance is essential: compare returns vs (1) best hedge funds, (2) stock market indexes (S&P 500, NASDAQ), (3) BTC. Include layer attribution, conviction-tier performance, regime assessment, outlook. MANDATORY: Save to ~/.dexter/reports/QUARTERLY-REPORT-YYYY-QN.md via save_report.
+- **Hyperliquid portfolio:** If HL account is connected, call hyperliquid_sync_portfolio with write_to_file=true first so quarterly summary uses live holdings; then if PORTFOLIO-HYPERLIQUID.md exists, call hyperliquid_portfolio_ops with action=quarterly_summary and period=YYYY-QN (e.g. 2026-Q1). Use the returned quarterly payload (portfolio_hl, hl_basket) with performance_history record_quarter (along with portfolio, btc, spy, gld). Then write a SEPARATE quarterly report: portfolio return vs BTC, SPY, GLD, hl_basket; category attribution; regime, outlook. MANDATORY: Save to ~/.dexter/reports/QUARTERLY-REPORT-HL-YYYY-QN.md via save_report.
 - **YTD and since-inception:** Call performance_history view (or summary/ytd/since_inception when available). If inceptionDate in fund-config exists, compute since-inception. Include in both reports.
 - **Performance history:** Use hyperliquid_portfolio_ops quarterly_summary for HL decimals, or hyperliquid_performance; then pass to performance_history record_quarter.
 - Use financial_search for prices; for HL use hyperliquid_prices for pre-IPO or HL-native prices.
 - Deliver the full report(s) to the user
-${isAIHFConfigured() ? `- **AIHF Double-Check:** After saving the quarterly report(s), run the aihf_double_check tool with action=run. It reads PORTFOLIO.md and PORTFOLIO-HYPERLIQUID.md automatically. Include the summary (agreement %, conflicts, excluded-but-interesting) in your heartbeat alert. The full report is saved to .dexter/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md automatically.` : ''}` : ''}
+${isAIHFConfigured() ? `- **AIHF Double-Check:** After saving the quarterly report(s), run the aihf_double_check tool with action=run. It reads PORTFOLIO.md and PORTFOLIO-HYPERLIQUID.md automatically. Include the summary (agreement %, conflicts, excluded-but-interesting) in your heartbeat alert. The full report is saved to .dexter/reports/AIHF-DOUBLE-CHECK-YYYY-MM-DD.md automatically.` : ''}` : ''}
 `;
   }
 
   const portfolioSection = portfolioContent
     ? `
-## Current Portfolio (~/.dexter/PORTFOLIO.md)
+## Current Portfolio (~/.dexter/portfolios/PORTFOLIO.md)
 
 ${portfolioContent}
 `
@@ -194,7 +195,7 @@ ${portfolioContent}
   );
   const portfolioHLSection = portfolioHLContent
     ? `
-## Hyperliquid Portfolio (~/.dexter/PORTFOLIO-HYPERLIQUID.md)
+## Hyperliquid Portfolio (~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md)
 
 On-chain portfolio (HIP-3 tickers). For weekly rebalance: use the "## HIP-3 Target" section from the Checklist above as target allocation. For quarterly: write a dedicated report and save to QUARTERLY-REPORT-HL-YYYY-QN.md.
 ${hlAccountConfigured ? '\n**Live sync:** HL account is configured. Prefer calling hyperliquid_sync_portfolio with write_to_file=true before rebalance_check or quarterly_summary so ops use current on-chain positions.\n' : ''}
@@ -205,7 +206,7 @@ ${portfolioHLContent}
       ? `
 ## Hyperliquid (live sync available)
 
-HL account is configured (HYPERLIQUID_ACCOUNT_ADDRESS). For HL rebalance or quarterly report: call hyperliquid_sync_portfolio with write_to_file=true first to refresh ~/.dexter/PORTFOLIO-HYPERLIQUID.md from live positions, then run hyperliquid_portfolio_ops (rebalance_check or quarterly_summary).
+HL account is configured (HYPERLIQUID_ACCOUNT_ADDRESS). For HL rebalance or quarterly report: call hyperliquid_sync_portfolio with write_to_file=true first to refresh ~/.dexter/portfolios/PORTFOLIO-HYPERLIQUID.md from live positions, then run hyperliquid_portfolio_ops (rebalance_check or quarterly_summary).
 `
       : '';
 
