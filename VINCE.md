@@ -13,9 +13,80 @@
 
 ### _Push, not pull._
 
-**Unified data intelligence** for options, perps, memes, DeFi, lifestyle, and NFT floors, with a **self-improving paper trading bot** at the core. Ten agents, one team, one dream. No hype, no shilling, no timing the market.
+**Unified data intelligence** for options and perps, with a **self-improving paper trading bot** at the core — powered by [Dexter](README.md) as the thesis engine and the [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) as the research backend.
+
+> **⚠️ Active refactor in progress.** The sections below document what VINCE is today. The [Refactor Goals](#refactor-goals) section immediately below describes where it is going. Read that first.
 
 </div>
+
+---
+
+## Refactor Goals
+
+VINCE v1 proved the loop. VINCE v2 strips it to the core and rebuilds around the full Dexter + AIHF stack.
+
+### 1 — Add MLX (top priority)
+
+The single most important addition. Same overnight autoresearch ratchet that powers Dexter, applied to VINCE's own reasoning layer via **Forge**.
+
+- Vendor [`autoresearch-mlx`](https://github.com/trevin-creator/autoresearch-mlx) into `src/tools/forge/`
+- Forge mutates agent prompts, gate policies, swarm collaboration rules, and feature engineering logic
+- Evaluation harness: VINCE's existing paper-bot replay engine
+- Metric: `causal_uplift × Sharpe × flywheel_score`
+- Ratchet: git commit winners, revert losers — you wake up to tighter gates and a one-paragraph summary
+
+```bash
+# New env flag (add to .env.example)
+FORGE_ENABLED=true
+FORGE_RUNTIME=mlx            # or "python" for non-Apple-Silicon
+FORGE_BUDGET_MINUTES=300     # 5-hour safe nightly window
+FORGE_TARGET_METRIC=causal_uplift_sharpe_flywheel
+```
+
+No cloud. No extra bills. 300–600 experiments/hour on M2/M3/M4 unified memory.
+
+### 2 — Remove lifestyle (Kelly → OpenClaw)
+
+Kelly and the `plugin-kelly` lifestyle concierge are **removed from the VINCE core**. Lifestyle intelligence (hotels, dining, fitness, wine, health) moves entirely to [OpenClaw](OPENCLAW.md) as a first-class use case — a cleaner home for it and a better demonstration of OpenClaw's own skill system.
+
+VINCE v2 has one job: trading intelligence. No lifestyle tab, no flywheel score dilution from non-trading signals, no Kelly in standups.
+
+### 3 — Remove memes and NFTs
+
+All memes tracking, NFT floor data, and associated signal logic is removed. These surfaces had the worst signal-to-noise ratio and the highest maintenance cost. VINCE v2 focuses exclusively on:
+
+- Hyperliquid perps (the paper bot)
+- Hypersurface options (Solus)
+- Polymarket (Oracle)
+- Onchain DeFi positions (Otaku)
+- X sentiment as a clean input signal (Echo/ECHO)
+
+No meme columns in the feature store. No NFT floor provider. No Memetics tab on the leaderboard.
+
+### 4 — Rethink the frontend: serve Dexter + AIHF data
+
+The biggest architectural change. VINCE v2 is not a standalone intelligence — it is the **terminal frontend** for the full three-repo stack.
+
+| Data source | What VINCE surfaces |
+|-------------|----------------------|
+| **Dexter** | BTC regime, SOUL.md thesis state, option theta P&L, weekly rebalance signal, quarterly attribution |
+| **AI Hedge Fund** | 18-analyst conviction scores, AIHF challenge results, `/double-check` output, Sharpe autoresearch deltas |
+| **VINCE itself** | Paper bot positions, causal proof status, ONNX model health, feature store depth, Synergy score |
+
+The leaderboard becomes a unified dashboard across all three repos. The daily standup gains AIHF and Dexter rows. Forge's nightly summary surfaces alongside the paper bot PnL.
+
+### 5 — SOUL.md as a user-facing config primitive
+
+VINCE v2 ships with a clear onboarding path that lets any user replace our thesis with their own in one file.
+
+```
+SOUL.md                  ← your thesis (BTC-core, gold-core, equity-only, whatever)
+  └─ Dexter reads it     ← builds portfolio sleeves from your conviction
+  └─ AIHF reads it       ← 18 agents challenge your thesis, not a generic one
+  └─ Forge reads it      ← overnight experiments optimize for your metric, not ours
+```
+
+The `SOUL.md` format is documented, versioned, and validated on startup. If a key field is missing, Dexter tells you exactly what to fill in. The goal: a new user can express their investment thesis in plain English, run `bun start`, and have the full stack — paper bot, AIHF challenge, Forge overnight run — operating on their conviction by the next morning.
 
 ---
 
