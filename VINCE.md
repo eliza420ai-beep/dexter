@@ -45,11 +45,47 @@ FORGE_TARGET_METRIC=causal_uplift_sharpe_flywheel
 
 No cloud. No extra bills. 300–600 experiments/hour on M2/M3/M4 unified memory.
 
-### 2 — Remove lifestyle (Kelly → OpenClaw)
+### 2 — Remove lifestyle (Kelly → OpenClaw + the Three Machines)
 
-Kelly and the `plugin-kelly` lifestyle concierge are **removed from the VINCE core**. Lifestyle intelligence (hotels, dining, fitness, wine, health) moves entirely to [OpenClaw](OPENCLAW.md) as a first-class use case — a cleaner home for it and a better demonstration of OpenClaw's own skill system.
+Kelly and `plugin-kelly` are **removed from the VINCE core**. This is not a demotion — it's Kelly finally running on the infrastructure it always deserved.
 
-VINCE v2 has one job: trading intelligence. No lifestyle tab, no flywheel score dilution from non-trading signals, no Kelly in standups.
+The argument is laid out cleanly in [The Three Machines](https://ikigaistudio.substack.com/p/the-three-machines) (ikigaistudio, Mar 2026): the operator stack that has emerged is three layers, not one.
+
+| Machine | Role | Runs when |
+|---------|------|-----------|
+| **Perplexity** | Research layer — real-time search, source attribution, raw intelligence that feeds the thesis | Always |
+| **Claude Cowork** | Decision layer — desktop operator, reviews system output, drafts briefs, executes multi-step tasks that need desktop context | Laptop open |
+| **OpenClaw** | Execution layer — always-on background daemon, skills-based connectors, triggers and monitors 24/7 | Always, even when laptop is closed |
+
+The insight the essay surfaces: the OpenClaw community has already built fragments of Kelly without knowing Kelly exists. A wine cellar skill that indexes 962 bottles from a CSV and answers natural language queries. An Oura Ring health assistant that cross-references biometrics with calendar. A grocery autopilot that navigates Tesco via browser control. A Home Assistant integration managing room air quality and a Roborock vacuum through conversation. Each one is a Kelly use case. Each one is a daemon running on $5/month on a server that never sleeps.
+
+**This is exactly why Kelly belongs on OpenClaw, not inside a trading terminal.**
+
+VINCE needs to be at your desk when it matters. Kelly needs to be running at 3 AM when you're not. Claude Cowork requires the laptop to be open — it can review the overnight trade post-mortem but it cannot send you a wine pairing suggestion while you're at the village market on Saturday. OpenClaw can. OpenClaw is the daemon that runs while you live the life the trading system is designed to protect.
+
+**The full three-machine stack for our workflow:**
+
+```
+Perplexity
+  └─ researches regime shifts, earnings, macro catalysts, sector outlook
+  └─ feeds raw intelligence into Dexter's thesis layer and AIHF analyst context
+
+Claude Cowork (desktop, laptop open)
+  └─ reviews weekly Dexter attribution report
+  └─ drafts SOUL.md thesis updates after quarterly review
+  └─ interprets Forge's nightly summary and proposes policy mutations
+  └─ runs post-mortems on losing VINCE trades
+
+OpenClaw (always-on daemon, $5/month server)
+  └─ Kelly skills: wine cellar, health protocols, travel, dining, fitness
+  └─ VINCE monitoring: drift sentinel, budget breach alerts, Telegram pushes
+  └─ Dexter triggers: weekly rebalance reminder, theta P&L push, SOUL.md validation
+  └─ Forge watcher: pushes nightly "X experiments ran, Y committed" summary to Telegram
+```
+
+The moat is not the tool. Anyone can install OpenClaw. The moat is the skills — the AGENTS.md files that encode six months of live trading intelligence, Kelly's 1,200 knowledge files on wine and lifestyle, and the operational logic that ties them together. The infrastructure is identical for everyone. The judgment encoded in the instructions is not.
+
+VINCE v2 has one job: trading intelligence. No lifestyle tab, no flywheel score dilution from non-trading signals, no Kelly in standups. Kelly moves to OpenClaw and gets better at being Kelly — running 24/7, connected to your calendar, your health data, your cellar, your grocery order, your home, your life.
 
 ### 3 — Remove memes and NFTs
 
