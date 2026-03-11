@@ -191,6 +191,75 @@ VINCE proves the signal is real (paper bot, causal gates, ONNX)
 
 **Current lean:** agent-cli if the priority is self-improving strategy orchestration (REFLECT + APEX + SOUL.md awareness + OpenClaw); perp-cli if the priority is multi-DEX reach, TypeScript consistency, and clean AI agent I/O (`--json` everywhere). The two are not mutually exclusive — perp-cli as the low-level multi-DEX execution primitive, agent-cli as the orchestration + self-improvement layer on top of it, is a viable hybrid.
 
+### 7 — Agent-by-agent refactor: what stays, what moves, what gets rethought
+
+Each of VINCE's ten agents gets re-evaluated against a single question: **is this the right home for this intelligence?**
+
+---
+
+#### Solus — stays, gets all the focus
+
+The one agent in VINCE v2 that earns its keep without debate. Solus assists with the weekly onchain options strategy on Hypersurface — strike ritual, optimal strike selection, assignment probability (GBM + ML), Brier calibration, tail risk, portfolio copula, Friday resolve reminder. This is the core, recurring, high-stakes use case that VINCE exists to serve. Every refactor decision should be evaluated against whether it makes Solus sharper. If an agent, plugin, or feature dilutes focus away from Solus, it should be cut or moved.
+
+---
+
+#### Echo / plugin-x-researcher → move to Dexter as a skill
+
+The X research logic — BTC long-term sentiment signal, clawterm day report, source ranking, machine-readable payload for downstream agents — has real value. But it belongs in Dexter, not VINCE. Dexter is where thesis-level signals live. BTC sentiment is a thesis input, not a perps trading input. The clean move: extract the core `x-research` skill and add it to Dexter's skill registry, where it feeds directly into SOUL.md validation, regime checks, and quarterly thesis audits. The plugin-x-researcher infrastructure in VINCE gets removed.
+
+---
+
+#### Oracle (Polymarket) — honest failure, deprioritize
+
+We have not gotten real insights from Oracle. The latency arb engine and Kelly-sized paper trades look good on paper but have never produced actionable edge in practice. The Polymarket CLOB data is noisy, the implied probability math requires cleaner order flow than we have, and the causal proof for multi-agent treatment on prediction markets has not materialized. Oracle stays in the codebase as a low-maintenance stub but gets zero active development in VINCE v2. If the Polymarket angle is worth revisiting, it belongs in the AIHF research backend — not in a perps-focused terminal.
+
+---
+
+#### Clawterm + Sentinel → move to skills for Claude Code / Codex
+
+Both agents exist to help us as developers — Clawterm for OpenClaw skills/terminal guidance, Sentinel for ops, cost tracking, ONNX health, PRDs, and repo improvements. This is exactly the use case that Claude Code and Codex are built for. As VINCE plugins they add overhead and consume context. As skills loaded into Claude Code or Codex they run natively in the environment where the development work actually happens. The move: extract both into standalone `SKILL.md` files (following the agent skills standard), remove the plugins from VINCE v2, and install them into the Claude Code / Codex workspace.
+
+---
+
+#### Eliza (knowledge research) → hand off to Perplexity
+
+Eliza's core job in VINCE was extending the knowledge base — 1,200+ files built through research sessions, document ingestion, and structured knowledge encoding. That was valuable. But Perplexity is the right machine for this. It searches in real time, cites sources, synthesizes current information, and hands off clean research to Claude for writing and reasoning. Eliza as a knowledge-ingestion agent inside VINCE is a manual, fragile substitute for what Perplexity does natively and better. The VINCE knowledge base becomes a Perplexity → Claude Cowork → commit pipeline. Eliza as a plugin gets removed. The 1,200 knowledge files stay.
+
+---
+
+#### Otaku — keep, but reframe around ERC-8004 agent identity
+
+Otaku was the only agent with a wallet — Morpho, CDP, Bankr, Biconomy, Clanker, DefiLlama, execution graduation L0→L3. The onchain execution angle is worth preserving. But the framing needs to update.
+
+The more interesting experiment is to use Otaku as a showcase for what we believe is the future of NFTs — not collectibles, but **agent identity and on-chain reputation**. The argument is laid out in [The Decade-Long Bet](https://ikigaistudio.substack.com/p/the-decade-long-bet) and [The Primitive Is Alive](https://ikigaistudio.substack.com/p/the-primitive-is-alive): ERC-721 failed as a collectible vehicle because collectibles have no cash flows. ERC-8004 — the same primitive applied to AI agent identity — succeeds because agent identity has cash flows. Every time an agent's skill is queried, revenue accrues to the NFT holder. The token is not a JPEG. It is a business license, a reputation record, and a revenue stream.
+
+The structural parallel to our 2017 IP certificate thesis is exact: in 2017 the token carried a photographer's provenance, authorship, and rights metadata. In 2026 the token carries the agent's identity, track record, and skill endpoints. The entity changed. The architecture didn't.
+
+Otaku in VINCE v2 becomes the agent that:
+- Registers VINCE's own agent identity on ERC-8004 (Identity Registry)
+- Accumulates on-chain reputation from real Solus prediction scores (Reputation Registry)
+- Exposes VINCE's signal quality skill as an x402 endpoint — callable by other agents, paid per query
+- Demonstrates execution graduation as it earns trust (L0 → L3) through a verifiable on-chain track record rather than internal flags
+
+This is not a peripheral experiment. This is the proof-of-concept for the thesis: autonomous agents need permissionless, verifiable, portable identity and reputation because they cannot build trust through social networks, legal systems, or word of mouth. We have the data (Brier scores, ONNX calibration curves, six months of predictions) to make this real.
+
+---
+
+#### Summary table
+
+| Agent | VINCE v2 status | New home (if moved) |
+|-------|----------------|---------------------|
+| **Solus** | ✅ Core focus | — |
+| **Otaku** | ✅ Reframed → ERC-8004 identity + x402 skills | — |
+| **Echo / x-researcher** | ➡️ Move | Dexter skill |
+| **Clawterm** | ➡️ Move | Claude Code / Codex skill |
+| **Sentinel** | ➡️ Move | Claude Code / Codex skill |
+| **Eliza** | ➡️ Hand off | Perplexity → Cowork pipeline |
+| **Oracle** | ⏸️ Stub, no dev | AIHF if revisited |
+| **Kelly** | ➡️ Move (Goal 2) | OpenClaw daemon |
+| **Naval** | 🔲 Evaluate | Philosophy → Dexter SOUL.md review? |
+| **VINCE (data agent)** | ✅ Core perps data feed | — |
+
 ---
 
 ## What We Built: A Recursive Trading Intelligence Engine
