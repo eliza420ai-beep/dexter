@@ -21,6 +21,31 @@
 
 ---
 
+## Quick read (start here)
+
+**What VINCE is:** a recursive trading intelligence terminal — paper bot signal research, onchain options assistant, self-improving overnight engine. Part of a three-repo stack with [Dexter](README.md) (thesis + BTC regime) and the [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) (18-analyst research backend).
+
+**What v1 proved:** the recursive proof loop works. Feature store → ONNX models → causal gates → policy update → repeat. 1,200+ commits, ten agents, full attribution surface. The loop compounds. The surface was too wide.
+
+**What v2 does:** strips to three agents, ships Forge overnight autoresearch, and repositions VINCE as the frontend terminal for the full stack.
+
+| Keep | Move | Cut |
+|------|------|-----|
+| **Solus** — weekly Hypersurface options (core use case) | **Echo** → Dexter skill | Memes + NFT tracking |
+| **Otaku** — reframed as ERC-8004 agent identity + x402 skills | **Kelly** → OpenClaw daemon | Polymarket / Oracle |
+| **VINCE data agent** — perps data feed for Solus + Otaku | **Eliza** → Perplexity pipeline | Flywheel score |
+| **Forge** — nightly MLX autoresearch, `causal_uplift × Sharpe` | **Clawterm + Sentinel** → Claude Code skills | Memetics tab |
+
+**The operator stack:** Perplexity (research) → Claude Cowork (review + briefs) → OpenClaw (Kelly 24/7 daemon) + VINCE (trading terminal). Three machines. No overlap.
+
+**Live execution:** spun out to a standalone repo. Two candidates — [`agent-cli`](https://github.com/eliza420ai-beep/agent-cli) (Python, REFLECT self-improvement, APEX orchestrator) or [`perp-cli`](https://github.com/eliza420ai-beep/perp-cli) (TypeScript, multi-DEX, CCTP V2). VINCE proves the signal; the execution repo trades it live.
+
+→ [Refactor Goals](#refactor-goals) — full seven-goal breakdown  
+→ [Agent-by-agent](#7--agent-by-agent-refactor-what-stays-what-moves-what-gets-rethought) — what happens to each of the ten agents  
+→ [V1 Reference](#v1-reference-what-we-built) — what exists in the codebase today
+
+---
+
 ## Refactor Goals
 
 VINCE v1 proved the loop. VINCE v2 strips it to the core and rebuilds around the full Dexter + AIHF stack.
