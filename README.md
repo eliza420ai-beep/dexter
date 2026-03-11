@@ -1,10 +1,14 @@
 # Dexter
 
-**A researcher who thinks. Not a search engine with opinions.**
+**Your personal AI hedge fund. Lives in your terminal. Gets smarter every night.**
 
-Dexter is a financial research agent that starts from a thesis and works inward. Before it pulls a single data point, it reads **SOUL.md** — the document that tells it who it is, what it believes, and where the edge lives. The thesis constrains the search space. The data fills the positions. The attribution measures the outcome.
+Dexter takes the “AI is infrastructure” thesis — energy, chips, data centers, models, applications — and turns it into a portfolio that manages itself based on what you actually believe. Write your real convictions in one file called **SOUL.md**. That’s literally all it cares about. Dexter reads your thesis, sets up **80% Bitcoin** as the core, then **10% stocks/options** and **10% on-chain equities** — all thesis-focused, zero overlap between sleeves.
 
-The bar is the **Portfolio Builder**: build and maintain a portfolio aligned with your thesis that beats the benchmarks (S&P 500, NASDAQ, BTC, top hedge funds). The tool doesn’t succeed by answering questions well; it succeeds by producing a portfolio that outperforms. Otherwise it fails the bar. *[More: [The Researcher Who Thinks](https://ikigaistudio.substack.com/p/the-researcher-who-thinks)]*
+It doesn’t buy and forget. It rebalances every week, collects options premium on names you already like, and every quarter it writes a full report asking: *where was your thesis right, where was it wrong?* That loop is the point — keep SOUL.md honest, and everything else compounds. This isn’t a robo-advisor or a signals bot. It’s thesis-first: the conviction constrains the search space, the data fills the positions, the attribution measures the outcome.
+
+The bar is the **Portfolio Builder**: build and maintain a portfolio that beats the benchmarks (S&P 500, NASDAQ, BTC, top hedge funds). The tool doesn’t succeed by answering questions well; it succeeds by producing a portfolio that outperforms. We’re using the AI infrastructure thesis to invest in the AI infrastructure thesis. *[More: [The Researcher Who Thinks](https://ikigaistudio.substack.com/p/the-researcher-who-thinks)]*
+
+The most novel part of this fork: **Dexter improves itself.** [AutoResearch-MLX](docs/PRD-NORTH-STAR-AUTORESEARCH.md) — an Apple Silicon-native autonomous research loop inspired by Karpathy’s autoresearch — runs experiments on Dexter’s own reasoning while you sleep. No GPU, no cloud, no bill: pure MLX on your Mac. You point it at a goal (“sharper conviction scoring,” “better theta strike selection,” “cleaner quarterly audits”), it runs short 5-minute experiments, measures each variant against BTC/SPY/GLD, and commits only what actually improves. The quarterly reports get sharper, the options logic gets more dialed, and the agent levels up overnight. Full loop: **SOUL.md sets direction → Dexter executes in real markets → AutoResearch-MLX sharpens the brain → repeat.** It’s the AI infrastructure thesis applied to building a better AI infrastructure investor.
 
 ## Table of Contents
 
