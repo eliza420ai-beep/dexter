@@ -124,67 +124,72 @@ SOUL.md                  ← your thesis (BTC-core, gold-core, equity-only, what
 
 The `SOUL.md` format is documented, versioned, and validated on startup. If a key field is missing, Dexter tells you exactly what to fill in. The goal: a new user can express their investment thesis in plain English, run `bun start`, and have the full stack — paper bot, AIHF challenge, Forge overnight run — operating on their conviction by the next morning.
 
-### 6 — Spin out live execution: adopt agent-cli as the Hyperliquid execution layer
+### 6 — Spin out live execution: choose an execution layer starter
 
-This is the cleanest architectural cut of the entire refactor.
+> **Open decision.** The execution layer will be a standalone repo. The architectural cut is clear. The starter choice is not yet final. Two strong candidates, both forked into the org.
 
-VINCE's paper trading bot has excellent signal logic — feature store, ONNX models, causal proof gates, regime profiles, Kelly sizing, VinceBench scoring. That logic is worth keeping. But **the usecase of actually executing trades on Hyperliquid deserves its own repo**, and we should not try to bolt production execution onto an ElizaOS frontend that was never designed for it.
+VINCE's paper trading bot has excellent signal logic — feature store, ONNX models, causal proof gates, regime profiles, Kelly sizing, VinceBench scoring. That logic is worth keeping. But **the use case of actually executing trades on Hyperliquid deserves its own repo**, and we should not try to bolt production execution onto an ElizaOS frontend that was never designed for it.
 
-We are adopting [agent-cli](https://github.com/eliza420ai-beep/agent-cli) (forked from [Nunchi-trade/agent-cli](https://github.com/Nunchi-trade/agent-cli)) as the execution layer starter.
+#### Option A — [agent-cli](https://github.com/eliza420ai-beep/agent-cli) (Python · forked from Nunchi-trade)
 
-**Why agent-cli is the right foundation:**
+| Strength | Detail |
+|----------|--------|
+| **Strategy depth** | 14 strategies: `engine_mm`, `avellaneda_mm`, `regime_mm`, APEX orchestrator, Guard trailing stop, Radar scanner, Pulse detector |
+| **REFLECT self-improvement** | Nightly loop — reads trade history, auto-adjusts APEX parameters (radar threshold, confidence gates, daily loss limit) with guardrail bounds. Execution-layer equivalent of Forge |
+| **APEX orchestrator** | Manages 2–3 concurrent slots, composes Radar + Pulse + Guard, proven on testnet |
+| **MCP server** | 16 tools via Model Context Protocol: `radar_run`, `apex_run`, `reflect_run`, `trade`, `status` — callable from Dexter, VINCE, Claude |
+| **OpenClaw deployment** | One-click Railway deploy, Telegram bot, reads `AGENTS.md` + `SOUL.md` to define trading behavior |
+| **Skills standard** | Each capability (Onboard, APEX, Radar, Pulse, Guard, REFLECT) ships as `SKILL.md` installable into OpenClaw, Claude Code, or Dexter |
+| **Weakness** | Python (different stack from VINCE/Dexter TypeScript). HL-only — no multi-DEX. |
 
-- **14 battle-tested strategies** across market making, arbitrage, momentum, and risk — `engine_mm`, `avellaneda_mm`, `regime_mm`, APEX orchestrator, Guard trailing stop, Radar opportunity scanner, Pulse momentum detector
-- **REFLECT nightly self-improvement loop** — reads trade history, computes win rate/FDR/direction split/monster dependency, and auto-adjusts APEX parameters (raise radar threshold, tighten confidence gates, reduce daily loss limit) with guardrail bounds. This is the execution-layer equivalent of Forge
-- **APEX orchestrator** — manages 2-3 concurrent slots, composes Radar + Pulse + Guard, proven on testnet: signal detection → entry → trailing stop → exit
-- **MCP server** — exposes 16 trading tools via Model Context Protocol; any AI agent (Claude, Dexter, VINCE) can call `radar_run`, `apex_run`, `reflect_run`, `trade`, `status` as structured tools
-- **OpenClaw deployment** — one-click Railway deploy, Telegram bot, conversational AI trading assistant; reads `AGENTS.md` and `SOUL.md` from the workspace to define trading behavior
-- **Agent Skills standard** — each capability (Onboard, APEX, Radar, Pulse, Guard, REFLECT) ships as a self-contained `SKILL.md` installable into OpenClaw, Claude Code, or Dexter
+#### Option B — [perp-cli](https://github.com/eliza420ai-beep/perp-cli) (TypeScript · forked from hypurrquant)
 
-**The division of labor:**
+| Strength | Detail |
+|----------|--------|
+| **Language match** | TypeScript + ESM — same stack as VINCE and Dexter. No context switch |
+| **Multi-DEX** | Pacifica (Solana) + Hyperliquid (HyperEVM) + Lighter (Ethereum) from one CLI |
+| **Cross-chain bridge** | CCTP V2 — $0 fee USDC bridging across Solana, Arbitrum, Base (6 routes) |
+| **Funding rate arb** | Cross-exchange scanner + auto-executor: `perp arb auto --min-spread 30` |
+| **AI agent mode** | Every command supports `--json` with consistent envelope + error codes. `perp api-spec --json` for full discovery. Composite plans for multi-step atomic operations |
+| **Claude Code skill** | `npx skills add hypurrquant/perp-cli` — universal installer for Claude Code, Cursor, Codex |
+| **Test coverage** | 860+ tests |
+| **Weakness** | No REFLECT-style self-improvement loop. No APEX orchestrator. Grid/DCA bots but less sophisticated strategy composition than agent-cli. |
+
+#### Side-by-side
+
+| Criterion | agent-cli | perp-cli |
+|-----------|-----------|----------|
+| Language | Python | **TypeScript** ✓ |
+| Exchanges | HL only | **Pacifica + HL + Lighter** ✓ |
+| Strategy depth | **14 strategies + APEX** ✓ | Grid, DCA, arb bots |
+| Self-improvement | **REFLECT auto-tune** ✓ | None |
+| MCP integration | **16 tools, full MCP server** ✓ | `--json` + composite plans |
+| OpenClaw deploy | **One-click Railway + Telegram** ✓ | Claude Code skill |
+| SOUL.md aware | **Yes** ✓ | No |
+| Cross-chain bridge | No | **CCTP V2, $0 fee** ✓ |
+| Tests | ~263 | **860+** ✓ |
+
+#### The architectural cut either way
+
+Regardless of which starter wins, the division of labor is identical:
 
 | Layer | Repo | Job |
 |-------|------|-----|
-| Signal research | VINCE (this repo) | Feature store, ONNX signal quality, causal proof, regime detection, VinceBench scoring |
+| Signal research | VINCE (this repo) | Feature store, ONNX, causal proof, regime detection, VinceBench |
 | Thesis + conviction | [Dexter](README.md) | SOUL.md, BTC regime, AIHF challenge, quarterly attribution |
-| Live execution | [agent-cli](https://github.com/eliza420ai-beep/agent-cli) | APEX orchestrator, Guard stops, REFLECT auto-tune, MCP tools, Telegram bot |
+| Live execution | agent-cli **or** perp-cli | Order placement, position management, real PnL |
 
-**How VINCE signals feed agent-cli:**
-
-```
-VINCE feature store
-  └─ signal_quality score (ONNX) ──→ agent-cli claude_agent / MCP tool
-  └─ regime classification        ──→ APEX preset selection (conservative / default / aggressive)
-  └─ top-ranked Radar candidates  ──→ APEX priority queue override
-  └─ causal proof status          ──→ execution graduation gate (observe → auto)
-
-Dexter SOUL.md
-  └─ BTC regime                   ──→ agent-cli HL_TESTNET flag + daily loss limit
-  └─ thesis risk budget           ──→ APEX slot sizing
-```
-
-**What stays in VINCE, what moves to agent-cli:**
-
-| Stays in VINCE | Moves to agent-cli |
-|---------------|-------------------|
-| Feature store + ONNX training | Live order placement + fills |
-| Signal quality scoring | Guard trailing stops |
-| Causal uplift proof | REFLECT auto-tune |
-| VinceBench scoring | APEX slot management |
-| Paper bot (research/proof mode) | Production execution |
-| Synergy pillar proof | Real PnL attribution |
-
-The paper bot in VINCE remains valuable as the **proof harness** — it validates signal quality and causal gates before any real capital is risked. Once proof passes, agent-cli takes the signals and executes. The loop:
+And the proof-then-execute loop is the same:
 
 ```
 VINCE proves the signal is real (paper bot, causal gates, ONNX)
-  → agent-cli executes it live (APEX, Guard, REFLECT)
-  → REFLECT feeds real trade outcomes back to VINCE feature store
+  → execution repo trades it live
+  → real trade outcomes feed back to VINCE feature store
   → VINCE retrains on live outcomes
   → loop
 ```
 
-This is a cleaner, more honest version of the architecture VINCE was always trying to be.
+**Current lean:** agent-cli if the priority is self-improving strategy orchestration (REFLECT + APEX + SOUL.md awareness + OpenClaw); perp-cli if the priority is multi-DEX reach, TypeScript consistency, and clean AI agent I/O (`--json` everywhere). The two are not mutually exclusive — perp-cli as the low-level multi-DEX execution primitive, agent-cli as the orchestration + self-improvement layer on top of it, is a viable hybrid.
 
 ---
 
