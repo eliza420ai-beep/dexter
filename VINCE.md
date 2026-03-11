@@ -32,7 +32,7 @@ The single most important addition. Same overnight autoresearch ratchet that pow
 - Vendor [`autoresearch-mlx`](https://github.com/trevin-creator/autoresearch-mlx) into `src/tools/forge/`
 - Forge mutates agent prompts, gate policies, swarm collaboration rules, and feature engineering logic
 - Evaluation harness: VINCE's existing paper-bot replay engine
-- Metric: `causal_uplift × Sharpe × flywheel_score`
+- Metric: `causal_uplift × Sharpe` (flywheel score removed with Kelly in Goal 2)
 - Ratchet: git commit winners, revert losers — you wake up to tighter gates and a one-paragraph summary
 
 ```bash
@@ -40,7 +40,7 @@ The single most important addition. Same overnight autoresearch ratchet that pow
 FORGE_ENABLED=true
 FORGE_RUNTIME=mlx            # or "python" for non-Apple-Silicon
 FORGE_BUDGET_MINUTES=300     # 5-hour safe nightly window
-FORGE_TARGET_METRIC=causal_uplift_sharpe_flywheel
+FORGE_TARGET_METRIC=causal_uplift_sharpe
 ```
 
 No cloud. No extra bills. 300–600 experiments/hour on M2/M3/M4 unified memory.
@@ -91,13 +91,14 @@ VINCE v2 has one job: trading intelligence. No lifestyle tab, no flywheel score 
 
 All memes tracking, NFT floor data, and associated signal logic is removed. These surfaces had the worst signal-to-noise ratio and the highest maintenance cost. VINCE v2 focuses exclusively on:
 
-- Hyperliquid perps (the paper bot)
-- Hypersurface options (Solus)
-- Polymarket (Oracle)
-- Onchain DeFi positions (Otaku)
-- X sentiment as a clean input signal (Echo/ECHO)
+- **Hypersurface options** — Solus (the core use case, gets all the focus)
+- **Hyperliquid perps** — paper bot signal layer, feature store, ONNX proof harness
+- **Onchain identity + DeFi** — Otaku, reframed around ERC-8004 (see Goal 7)
 
-No meme columns in the feature store. No NFT floor provider. No Memetics tab on the leaderboard.
+What is explicitly not in v2:
+- No Polymarket / Oracle — failed to produce real edge, deprioritized (see Goal 7)
+- No X sentiment in VINCE — Echo/x-researcher moves to Dexter as a thesis-layer skill (see Goal 7)
+- No meme columns in the feature store, no NFT floor provider, no Memetics tab
 
 ### 4 — Rethink the frontend: serve Dexter + AIHF data
 
@@ -107,9 +108,9 @@ The biggest architectural change. VINCE v2 is not a standalone intelligence — 
 |-------------|----------------------|
 | **Dexter** | BTC regime, SOUL.md thesis state, option theta P&L, weekly rebalance signal, quarterly attribution |
 | **AI Hedge Fund** | 18-analyst conviction scores, AIHF challenge results, `/double-check` output, Sharpe autoresearch deltas |
-| **VINCE itself** | Paper bot positions, causal proof status, ONNX model health, feature store depth, Synergy score |
+| **VINCE itself** | Solus options positions + Brier calibration, paper bot signal quality, ONNX model health, feature store depth, Otaku ERC-8004 reputation score |
 
-The leaderboard becomes a unified dashboard across all three repos. The daily standup gains AIHF and Dexter rows. Forge's nightly summary surfaces alongside the paper bot PnL.
+The leaderboard becomes a unified dashboard across all three repos. The daily standup gains AIHF and Dexter rows. Forge's nightly summary surfaces alongside the Solus options P&L.
 
 ### 5 — SOUL.md as a user-facing config primitive
 
@@ -262,24 +263,23 @@ This is not a peripheral experiment. This is the proof-of-concept for the thesis
 
 ---
 
-## What We Built: A Recursive Trading Intelligence Engine
+## V1 Reference: What We Built
 
-Markets are now an AI-vs-AI game.  
-The edge is not a one-off model. The edge is a loop that compounds.
+> Everything below this line documents **VINCE v1** — what exists in the codebase today. It is preserved as historical context and as the foundation for the v2 refactor. Treat it as a reference, not a roadmap. Where v1 content contradicts the Refactor Goals above, the goals win.
 
-VINCE runs that loop end to end:
+### What VINCE v1 is
+
+Markets are now an AI-vs-AI game. The edge is not a one-off model. The edge is a loop that compounds.
+
+VINCE v1 ran that loop end to end across ten agents:
 
 **research → decision → trade → attribution → retraining → policy update**
 
-Every decision is explained before risk is taken.  
-Every outcome is written back into the system.  
-Every cycle updates how the next decision is made.
+Every decision was explained before risk was taken. Every outcome was written back into the system. Every cycle updated how the next decision was made.
 
-This is the core product: a machine that learns from its own behavior and only scales when proof is strong.
+The core proof: a machine that learns from its own behavior and only scales when proof is strong. The v2 refactor does not discard this — it strips it to the agents and surfaces where the loop actually worked, and rebuilds around those.
 
-### Current build focus: Recursive + ML proof loop
-
-Right now, we are focused on one job: push `Recursive North Star` to stable on-track by improving proof quality, not by loosening gates.
+### V1 build state: Recursive + ML proof loop
 
 - **Recursion pillar**: raise closed-outcome sufficiency, spread closes across distinct days, and improve regime balance so the allocator can move beyond observe-only with clean evidence.
 - **ML pillar**: keep model/runtime health strong and preserve signal quality discipline while we collect better training data.
@@ -392,9 +392,9 @@ The phase map shows how we shipped the machine:
 - Phase 14 PRD: [PRD_PHASE_14_PROOF_TO_CAPITAL_ENGINE.md](docs/standup/prds/PRD_PHASE_14_PROOF_TO_CAPITAL_ENGINE.md)
 - Phase 15 operational runbook: [PHASE_15_7DAY_RUNBOOK.md](docs/standup/prds/PHASE_15_7DAY_RUNBOOK.md)
 
-### Prior releases
+### Prior releases (v1 milestones)
 
-Earlier versions shipped the paper bot ML loop (feature store, ONNX, VinceBench), HIP-3 spot tokens alongside Hyperliquid perps, the Polymarket edge engine (three strategies, Kelly-sized), zero AI slop across all ten agents, the leaderboard with cost transparency, and the content flywheel (Eliza publishing real results to Substack).
+Earlier versions shipped: the paper bot ML loop (feature store, ONNX, VinceBench), HIP-3 spot tokens alongside Hyperliquid perps, the Polymarket edge engine (three strategies, Kelly-sized — later determined not to produce real edge), zero AI slop across all ten agents, the leaderboard with cost transparency, and the content flywheel (Eliza publishing real results to Substack). These releases proved the recursive proof loop. V2 strips to what works and rebuilds around it.
 
 ---
 
@@ -436,30 +436,30 @@ Edward Thorp proved these ideas in live markets at Princeton/Newport. Jim Simons
 
 ### Where VINCE sits
 
-VINCE is built at **Level 5**. Ten agents research, analyze, paper-trade, evaluate outcomes, and improve their own models. No human in the loop for signal generation, position sizing, or risk management. The paper bot trains in production, writes to the feature store, and deploys ONNX models back into the decision loop.
+VINCE v1 was built at **Level 5** — ten agents researching, analyzing, paper-trading, evaluating outcomes, and improving their own models. The paper bot trained in production, wrote to the feature store, and deployed ONNX models back into the decision loop.
 
-The move from Level 1 to Level 5 is not anti-human. It is pro-process. Advantage moved from information access to integrated research, risk, and execution that runs 24/7.
+VINCE v2 targets the same level with a tighter surface: Solus as the human-readable weekly workflow, Forge as the overnight self-improvement engine, Otaku as the on-chain identity layer, and the paper bot as the causal proof harness. The loop is the same. The agent count is not.
 
-Goal: stay in the game without living on screens. Push, not pull.
+The move from Level 1 to Level 5 is not anti-human. It is pro-process. Advantage moved from information access to integrated research, risk, and execution that runs 24/7. Goal: stay in the game without living on screens. Push, not pull.
 
 ---
 
 ## The Team
 
-Clear lanes, no overlap: data, plan, call, lifestyle, infra.
+V1 had ten agents in clear lanes. V2 is a smaller, sharper squad — see the full agent-by-agent breakdown in [Goal 7](#7--agent-by-agent-refactor-what-stays-what-moves-what-gets-rethought).
 
-| Agent | Lane |
-| :--- | :--- |
-| **Eliza** | Knowledge, research, brainstorm, Substack content. WRITE_ESSAY, DRAFT_TWEETS, CONTENT_AUDIT. The base everything builds on; next: Substack gold + banger tweets for X. |
-| **VINCE** | Objective data: options, perps, memes, news, paper bot, 15+ signal sources. Push, not pull. |
-| **ECHO** | CT sentiment, X research, social alpha, contrarian flags. Your ears on X. Plugin-x-research ships BTC long-term sentiment (machine-readable signal), clawterm day report with source stats and ranking, and save-with-metadata; contract tests keep payloads stable for other agents. |
-| **Oracle** | Prediction markets: Polymarket discovery, odds, portfolio (read-only). Polymarket insight depth is a focus for improvement. |
-| **Solus** | Hypersurface options: strike ritual, optimal strike, assignment prob (GBM + ML when ONNX loaded). Brier calibration, auto-record, Friday resolve reminder; tail risk & portfolio copula. **RecursiveLoop + ML:** calibration context and TRAIN_SOLUS_CALIBRATION_WHEN_READY so Solus gets better over time for onchain options. [SOLUS.md](docs/SOLUS.md) |
-| **Otaku** | **Only agent with a wallet.** Morpho, CDP, Bankr, Biconomy, Clanker, DefiLlama. Execution graduation (L0→L3). |
-| **Kelly** | Touch grass: hotels, fine dining, wine, health, fitness. Standup facilitator. Flywheel score. No trading. |
-| **Sentinel** | Ops, cost steward, ONNX, ART, PRDs, OpenClaw guide, collective memory, repo improvements. |
-| **Naval** | Philosophy, mental models, standup conclusions. One thesis, one signal, one team one dream. |
-| **Clawterm** | AI agents terminal: OpenClaw skills, Milaidy, ElizaOS, setup tips, trending. |
+| Agent | V1 lane | V2 verdict |
+| :--- | :--- | :--- |
+| **Solus** | Hypersurface options: strike ritual, assignment prob (GBM + ML), Brier calibration, tail risk, copula | ✅ **Core focus** — stays, gets all resources |
+| **Otaku** | Only agent with a wallet. Morpho, CDP, Bankr, execution graduation L0→L3 | ✅ **Reframed** — ERC-8004 identity + x402 skills |
+| **VINCE** | Objective data: perps, memes, news, paper bot, 15+ signal sources | ✅ **Core perps data feed** — scoped to perps + options |
+| **ECHO** | CT sentiment, X research, BTC long-term sentiment signal | ➡️ **Move** — Dexter skill (thesis input, not perps input) |
+| **Clawterm** | AI agents terminal: OpenClaw skills, setup tips, trending | ➡️ **Move** — Claude Code / Codex skill |
+| **Sentinel** | Ops, cost steward, ONNX health, PRDs, repo improvements | ➡️ **Move** — Claude Code / Codex skill |
+| **Eliza** | Knowledge research, Substack content, 1,200+ knowledge files | ➡️ **Hand off** — Perplexity → Claude Cowork pipeline |
+| **Oracle** | Polymarket discovery, latency arb, Kelly-sized paper trades | ⏸️ **Stub** — failed to produce real edge; no active dev |
+| **Kelly** | Lifestyle concierge: wine, dining, travel, health, flywheel score | ➡️ **Move** — OpenClaw daemon (see Goal 2) |
+| **Naval** | Philosophy, mental models, standup conclusions | 🔲 **Evaluate** — possible → Dexter SOUL.md review layer |
 
 One conversation, ask any teammate by name; standups 2x/day. [MULTI_AGENT.md](docs/MULTI_AGENT.md)
 
@@ -475,7 +475,11 @@ The paper bot runs 24/7 on the **Leaderboard** (Trading Bot tab): 15+ signal sou
 
 ### Polymarket: paper trading that proves the edge
 
-When spot moves, prediction markets often lag. Oracle runs a **latency arb engine**: Binance spot and Polymarket CLOB in real time, implied probability from the option-like payoff of binary contracts, edge above a threshold, Kelly-sized paper trades. No execution by default — only logs and learns. The goal is to show that the edge is real before a single dollar is at risk. You see whether it's running or paused on the leaderboard Polymarket tab; chat with Oracle for status, pause, or resume. Small edges, captured in code, 24/7.
+> **V2 note:** Oracle is deprioritized in v2. The latency arb engine and Kelly-sized paper trades never produced actionable edge in practice. The Polymarket CLOB data is noisy, the implied probability math requires cleaner order flow than we have, and the causal proof for multi-agent treatment on prediction markets never materialized. Oracle stays as a stub but gets zero active development. If the Polymarket angle is worth revisiting, it belongs in the AIHF research backend — not in a perps-focused terminal.
+
+*(V1 description below)*
+
+When spot moves, prediction markets often lag. Oracle ran a **latency arb engine**: Binance spot and Polymarket CLOB in real time, implied probability from the option-like payoff of binary contracts, edge above a threshold, Kelly-sized paper trades. No execution by default — only logs and learns. The goal was to show that the edge is real before a single dollar is at risk.
 
 ---
 
@@ -491,13 +495,23 @@ Solus **measures itself**. Every strike call can auto-record a prediction; at ex
 
 ## TL;DR
 
-VINCE pushes daily market intel (options, perps, memes, DeFi) to Discord and Slack. One command, **ALOHA**, gives the full read: vibe check + PERPS + OPTIONS + "trade today?".
+### V1 (what exists today)
 
-Underneath is a self-evolving paper bot: ML loop, feature store, ONNX deployment, strategy genome, regime profiles, portfolio construction, and execution graduation. It trains in production and updates parameters weekly.
+VINCE v1 pushes daily market intel (options, perps, memes, DeFi) to Discord and Slack across ten agents. One command, **ALOHA**, gives the full read: vibe check + PERPS + OPTIONS + "trade today?". A self-evolving paper bot runs underneath — ML loop, feature store, ONNX deployment, strategy genome, regime profiles, portfolio construction, execution graduation. Kelly handles lifestyle (wine, dining, travel, health, flywheel score). Every losing trade triggers a multi-agent post-mortem.
 
-Kelly runs lifestyle concierge (travel, wine, dining, health, fitness) and tracks the flywheel score. She does not give trading advice.
+### V2 (where this is going)
 
-Every losing trade gets an automated multi-agent post-mortem in `docs/standup/post-mortems/`. `bun run postmortems:ingest` turns those writeups into structured stats, guardrail suggestions, and RAG memory so each loss tightens the next decision.
+VINCE v2 is a focused trading intelligence terminal — not a ten-agent lifestyle platform.
+
+**Three agents. One thesis. One proof system.**
+
+- **Solus** runs the weekly onchain options strategy on Hypersurface. Strike ritual, assignment probability (GBM + ML Brier calibration), tail risk, portfolio copula. This is the weekly high-stakes workflow VINCE was always built to serve.
+- **Otaku** carries VINCE's on-chain identity — ERC-8004 registration, reputation from real Solus Brier scores, x402 skill endpoints. The proof-of-concept for the thesis that autonomous agents need verifiable, portable identity.
+- **VINCE (data agent)** feeds Solus and Otaku with perps data from Dexter and AIHF research outputs. Scoped to perps + options. No memes. No Polymarket. No lifestyle.
+
+**Forge** runs overnight on Apple Silicon, mutating agent prompts and gate policies against the paper bot replay engine. Every morning: a commit of winners, a revert of losers, a one-paragraph summary. `causal_uplift × Sharpe` is the only score that matters.
+
+Everything else — Echo, Clawterm, Sentinel, Eliza, Oracle, Kelly, Naval — moves to the right machine (Dexter, Claude Code, Perplexity, OpenClaw) or is cut.
 
 ---
 
@@ -519,20 +533,31 @@ bun start              # production (Postgres when POSTGRES_URL set)
 
 ## Features
 
-- **ALOHA** — One command: vibe check + PERPS + OPTIONS + "trade today?"
-- **Self-evolving paper bot** — End-to-end loop from signal to trade to feature store to training to ONNX deployment. Four models: signal quality, position sizing, TP optimizer, SL optimizer. Rule-based fallbacks keep it live when models are missing. Tune with env vars (ML threshold, swarm confidence, margin/size); see `Paper Bot & ML`.
-- **Strategy genome** — 15+ parameters mutate weekly, replay on history, and auto-promote the winner by Sharpe and drawdown.
-- **Regime profiles** — Five market personalities auto-shift risk limits, sizing, and signal thresholds from Oracle regime, Echo sentiment, and technicals.
-- **Execution graduation** — Otaku earns trust through four levels (paper → notify → confirm → auto), with circuit-breaker demotions.
-- **Portfolio construction** — Correlation matrix, heat caps, Kelly sizing, and opportunity-cost checks.
-- **Flywheel score** — One 0-100 health score across signal quality, trading performance, sentiment, content, knowledge, and engineering.
-- **Solus (Hypersurface)** — Strike ritual + optimal strike + assignment probability (GBM with optional ML). Brier calibration, auto-record, Friday resolve reminder, tail risk, and portfolio copula. Recursive learning. [SOLUS.md](docs/SOLUS.md)
-- **Multi-agent** — Ask any teammate by name. Standups run 2x/day. One thread, full team.
-- **Leaderboard** — One dashboard for Markets, Memetics, News, Digital Art, Trading Bot, and Knowledge. No chat required. [LEADERBOARD.md](docs/LEADERBOARD.md)
-- **Kelly** — Lifestyle concierge only. Daily briefing to channels with "kelly" or "lifestyle". Optional self-modification. [KELLY.md](docs/KELLY.md)
-- **Knowledge ingestion** — `VINCE_UPLOAD` and ingest-urls pipeline new information into `knowledge/`.
-- **X research (plugin-x-research)** — ALOHA-style X pulse and vibe, day reports, and machine-readable signals for downstream agents. **BTC long-term sentiment** delivers a structured payload (direction, confidence, targets, cue counts) so other agents can act on it without parsing prose. **Clawterm day report** ranks and dedupes X + web sources, exposes source stats (candidates, selected, dropped, reason), and returns clear no-data reasons. **Save research** writes to file with metadata and reason codes (no_room, low_value_filtered, etc.). Contract tests lock sourceStats and saveMeta shapes so integrations stay stable. [X-RESEARCH.md](docs/X-RESEARCH.md) · [plugin-x-research](src/plugins/plugin-x-research/)
-- **Proof & next** — Prove recursive improvement for paper bot (HL perps) and Solus (Hypersurface options), improve X and Polymarket insight quality, and sharpen Eliza for Substack + X output.
+> V2 status noted for each feature. Items marked ~~strikethrough~~ are removed or moved in the v2 refactor.
+
+**Core (stays in v2)**
+- **Solus (Hypersurface)** — Strike ritual + optimal strike + assignment probability (GBM with optional ML). Brier calibration, auto-record, Friday resolve reminder, tail risk, and portfolio copula. Recursive learning. ✅ Core focus. [SOLUS.md](docs/SOLUS.md)
+- **Self-evolving paper bot** — End-to-end loop from signal to trade to feature store to training to ONNX deployment. Four models: signal quality, position sizing, TP optimizer, SL optimizer. Rule-based fallbacks keep it live when models are missing. ✅ Signal research layer only (live execution spun out).
+- **Forge (v2 addition)** — Overnight autoresearch on Apple Silicon. Mutates agent prompts and gate policies against the paper bot replay engine. `causal_uplift × Sharpe` metric. ✅ New in v2.
+- **Otaku / ERC-8004 identity** — Reframed: agent identity registry, on-chain reputation from Solus Brier scores, x402 skill endpoints. ✅ Reframed in v2.
+- **ALOHA** — One command: vibe check + PERPS + OPTIONS + "trade today?" ✅ Scoped to perps + options (memes removed).
+- **Strategy genome** — 15+ parameters mutate weekly, replay on history, and auto-promote the winner by Sharpe and drawdown. ✅ Stays.
+- **Portfolio construction** — Correlation matrix, heat caps, Kelly sizing, and opportunity-cost checks. ✅ Stays.
+- **Multi-agent** — Standups 2x/day. One thread, remaining team. ✅ Scoped to Solus + Otaku + VINCE data agent.
+
+**Regime profiles** — *V2 note: Oracle regime and Echo sentiment inputs are removed (Oracle deprioritized, Echo moves to Dexter). V2 regime detection draws from Dexter's BTC regime + AIHF conviction scores.*
+
+**Moving to other machines (not in v2)**
+- ~~**Kelly**~~ — ➡️ Moves to OpenClaw daemon (see Goal 2).
+- ~~**Flywheel score**~~ — ➡️ Removed with Kelly. Non-trading signals dilute the metric.
+- ~~**X research (plugin-x-research / Echo)**~~ — ➡️ Moves to Dexter as a thesis-layer skill (see Goal 7).
+- ~~**Knowledge ingestion (Eliza)**~~ — ➡️ Hands off to Perplexity → Claude Cowork pipeline (see Goal 7).
+- ~~**Clawterm / Sentinel**~~ — ➡️ Move to Claude Code / Codex as skills (see Goal 7).
+
+**Deprioritized (stub only)**
+- ~~**Polymarket / Oracle**~~ — ⏸️ Latency arb engine and Kelly-sized paper trades never produced real edge. Remains in codebase as a low-maintenance stub; no active development (see Goal 7 for full post-mortem).
+- ~~**Leaderboard: Memetics + Digital Art tabs**~~ — ⏸️ Removed. Memes and NFT floor data had worst signal-to-noise and highest maintenance cost.
+- ~~**Proof & next (Eliza Substack + X output)**~~ — ⏸️ Handed off to Perplexity machine.
 
 ---
 
@@ -542,7 +567,9 @@ The 12-phase roadmap built this loop; the algo (gates, open/skip, feature store)
 
 **VinceBench** scores every closed trade on process quality (signal, risk, timing, regime). The score trains the signal-quality model to learn more from high-quality decisions.
 
-### Recent improvements
+### Recent improvements (v1)
+
+> V2 note: Sentinel improvement tasks (below) are being moved to Claude Code / Codex as a skill in v2. The paper bot remains as the causal proof harness, but live execution will be handled by the standalone execution repo (see Goal 6).
 
 - **ONNX export fixed** — Graph and node I/O are renamed to `input`/`output` so onnxruntime loads models reliably; smoke tests run after every export so you see "ONNX smoke test passed" for all four models.
 - **Env tuning** — No code changes needed to adjust trade frequency or size: ML threshold, swarm confidence, aggressive margin/size (see table below).
