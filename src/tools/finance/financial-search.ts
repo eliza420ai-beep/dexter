@@ -25,6 +25,7 @@ Intelligent meta-tool for financial data research. Takes a natural language quer
 - Historical stock prices over date ranges
 - Cryptocurrency prices
 - Revenue segment breakdowns
+- Technical indicators: 200-day MA, 50-day MA, 200-week MA, distance from moving averages
 - Multi-company comparisons (pass the full query, it handles routing internally)
 
 ## When NOT to Use
@@ -59,6 +60,7 @@ import { getInsiderTrades } from './insider_trades.js';
 import { getStockPrice, getStockPrices, getStockTickers } from './stock-price.js';
 import { getHistoricalKeyRatios } from './key-ratios.js';
 import { getCompanyNews } from './news.js';
+import { getTechnicalIndicators } from './technical-indicators.js';
 
 // All finance tools available for routing
 const FINANCE_TOOLS: StructuredToolInterface[] = [
@@ -66,6 +68,8 @@ const FINANCE_TOOLS: StructuredToolInterface[] = [
   getStockPrice,
   getStockPrices,
   getStockTickers,
+  // Technical Indicators
+  getTechnicalIndicators,
   getCryptoPriceSnapshot,
   getCryptoPrices,
   getCryptoTickers,
@@ -131,6 +135,8 @@ Given a user's natural language query about financial data, call the appropriate
    - For news, catalysts, "why did X move", recent announcements → get_company_news
    - For "why did X go up/down" → combine get_stock_price + get_company_news
    - For comprehensive analysis → get_all_financial_statements
+   - For moving averages, 200-day MA, 50-day MA, 200-week MA, technical support levels, "near its MA", "below 200W" → get_technical_indicators
+   - For multi-ticker MA comparisons (e.g. "check 200-day MA for AAPL, MSFT, GOOGL") → call get_technical_indicators once per ticker
 
 4. **Efficiency**:
    - Prefer specific tools over general ones when possible
