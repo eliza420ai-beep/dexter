@@ -124,6 +124,68 @@ SOUL.md                  ← your thesis (BTC-core, gold-core, equity-only, what
 
 The `SOUL.md` format is documented, versioned, and validated on startup. If a key field is missing, Dexter tells you exactly what to fill in. The goal: a new user can express their investment thesis in plain English, run `bun start`, and have the full stack — paper bot, AIHF challenge, Forge overnight run — operating on their conviction by the next morning.
 
+### 6 — Spin out live execution: adopt agent-cli as the Hyperliquid execution layer
+
+This is the cleanest architectural cut of the entire refactor.
+
+VINCE's paper trading bot has excellent signal logic — feature store, ONNX models, causal proof gates, regime profiles, Kelly sizing, VinceBench scoring. That logic is worth keeping. But **the usecase of actually executing trades on Hyperliquid deserves its own repo**, and we should not try to bolt production execution onto an ElizaOS frontend that was never designed for it.
+
+We are adopting [agent-cli](https://github.com/eliza420ai-beep/agent-cli) (forked from [Nunchi-trade/agent-cli](https://github.com/Nunchi-trade/agent-cli)) as the execution layer starter.
+
+**Why agent-cli is the right foundation:**
+
+- **14 battle-tested strategies** across market making, arbitrage, momentum, and risk — `engine_mm`, `avellaneda_mm`, `regime_mm`, APEX orchestrator, Guard trailing stop, Radar opportunity scanner, Pulse momentum detector
+- **REFLECT nightly self-improvement loop** — reads trade history, computes win rate/FDR/direction split/monster dependency, and auto-adjusts APEX parameters (raise radar threshold, tighten confidence gates, reduce daily loss limit) with guardrail bounds. This is the execution-layer equivalent of Forge
+- **APEX orchestrator** — manages 2-3 concurrent slots, composes Radar + Pulse + Guard, proven on testnet: signal detection → entry → trailing stop → exit
+- **MCP server** — exposes 16 trading tools via Model Context Protocol; any AI agent (Claude, Dexter, VINCE) can call `radar_run`, `apex_run`, `reflect_run`, `trade`, `status` as structured tools
+- **OpenClaw deployment** — one-click Railway deploy, Telegram bot, conversational AI trading assistant; reads `AGENTS.md` and `SOUL.md` from the workspace to define trading behavior
+- **Agent Skills standard** — each capability (Onboard, APEX, Radar, Pulse, Guard, REFLECT) ships as a self-contained `SKILL.md` installable into OpenClaw, Claude Code, or Dexter
+
+**The division of labor:**
+
+| Layer | Repo | Job |
+|-------|------|-----|
+| Signal research | VINCE (this repo) | Feature store, ONNX signal quality, causal proof, regime detection, VinceBench scoring |
+| Thesis + conviction | [Dexter](README.md) | SOUL.md, BTC regime, AIHF challenge, quarterly attribution |
+| Live execution | [agent-cli](https://github.com/eliza420ai-beep/agent-cli) | APEX orchestrator, Guard stops, REFLECT auto-tune, MCP tools, Telegram bot |
+
+**How VINCE signals feed agent-cli:**
+
+```
+VINCE feature store
+  └─ signal_quality score (ONNX) ──→ agent-cli claude_agent / MCP tool
+  └─ regime classification        ──→ APEX preset selection (conservative / default / aggressive)
+  └─ top-ranked Radar candidates  ──→ APEX priority queue override
+  └─ causal proof status          ──→ execution graduation gate (observe → auto)
+
+Dexter SOUL.md
+  └─ BTC regime                   ──→ agent-cli HL_TESTNET flag + daily loss limit
+  └─ thesis risk budget           ──→ APEX slot sizing
+```
+
+**What stays in VINCE, what moves to agent-cli:**
+
+| Stays in VINCE | Moves to agent-cli |
+|---------------|-------------------|
+| Feature store + ONNX training | Live order placement + fills |
+| Signal quality scoring | Guard trailing stops |
+| Causal uplift proof | REFLECT auto-tune |
+| VinceBench scoring | APEX slot management |
+| Paper bot (research/proof mode) | Production execution |
+| Synergy pillar proof | Real PnL attribution |
+
+The paper bot in VINCE remains valuable as the **proof harness** — it validates signal quality and causal gates before any real capital is risked. Once proof passes, agent-cli takes the signals and executes. The loop:
+
+```
+VINCE proves the signal is real (paper bot, causal gates, ONNX)
+  → agent-cli executes it live (APEX, Guard, REFLECT)
+  → REFLECT feeds real trade outcomes back to VINCE feature store
+  → VINCE retrains on live outcomes
+  → loop
+```
+
+This is a cleaner, more honest version of the architecture VINCE was always trying to be.
+
 ---
 
 ## What We Built: A Recursive Trading Intelligence Engine
