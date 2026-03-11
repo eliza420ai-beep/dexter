@@ -327,3 +327,79 @@ pnpm dev
 5. Run stocks: `cd stocks && pnpm dev`
 
 For more on Dexter (CLI, tools, skills), see the [Dexter README](https://github.com/virattt/dexter).
+
+**Dexter’s Portfolio Strategies: A Disciplined, Thesis-Driven AI Agent for Capital Allocation**
+
+Dexter is a terminal-based autonomous financial research agent that doesn’t just analyze markets — it **acts** on your deepest convictions, executes real trades, manages risk, and compounds capital in real time. Its entire strategy is built around one unbreakable principle: **your personal thesis in SOUL.md rules everything**. The agent reads that single file, extracts your conviction universe (currently framed as a 7-layer AI infrastructure stack), ranks assets by conviction tier, sizes positions accordingly, and then operates with zero discretion outside those rules.
+
+Here is exactly how the portfolio is constructed and managed.
+
+### 1. Fixed 80/10/10 Sleeve Structure (Venue-Separated, Zero Overlap)
+The portfolio is permanently divided into three isolated sleeves that never overlap:
+
+- **80 % BTC Core (HODL sleeve)**  
+  Pure, long-term Bitcoin hold. This is the “conviction anchor.” No leverage, no derivatives, no selling except in extreme thesis-invalidating scenarios (which require explicit user approval). The agent treats this as the baseline against which everything else is measured.
+
+- **10 % Tastytrade Sleeve (Off-chain AI Infra Equities + Theta Premium)**  
+  Traditional brokerage account for U.S. equities and listed options. Focused exclusively on off-chain AI infrastructure companies (chips, energy, factories, models, applications). This sleeve is where Dexter runs its **sophisticated theta strategy** — systematically selling premium to collect yield while staying directionally aligned with your thesis.
+
+- **10 % Hyperliquid Sleeve (On-chain Tokenized Equities)**  
+  Perpetual futures / on-chain tokenized equity exposure. Mirrors the same AI infra names as the tastytrade sleeve but lives entirely on-chain. Provides 24/7 liquidity, different risk profile, and on-chain transparency.
+
+**Why venue separation?** Risk isolation. A broker outage, regulatory issue, or on-chain exploit can never take down the entire portfolio. The agent enforces this rule programmatically — no position can exist in both sleeves.
+
+### 2. Thesis-Driven Allocation via SOUL.md
+Everything starts with **SOUL.md** — your living document of conviction. Inside it you define:
+- The 7-layer AI infrastructure universe
+- Conviction tiers (High / Medium / Low)
+- Position sizing rules
+- Hard “no-call” list (names you explicitly forbid)
+- Narrative deltas and kill criteria
+
+Dexter parses this file on every run, scores the current opportunity set, and sizes positions strictly according to your rules. If your thesis changes, the agent reflects it in the next cycle. No external signals, no hype — only your written conviction.
+
+### 3. Weekly Rebalances + Concentration Engine
+Every Sunday (or user-configured cadence) Dexter:
+- Pulls live prices and portfolio values
+- Calculates current weights
+- Surfaces concentration risks (any single name > predefined % of sleeve triggers alert)
+- Executes rebalance trades to bring allocations back in line
+- Logs every decision with reasoning
+
+Rebalances are surgical — only the minimum required trades to restore targets. No unnecessary turnover.
+
+### 4. Theta Strategy (The Yield Engine) – Governed by THETA-POLICY.md
+This is the most sophisticated part of the tastytrade sleeve. Dexter follows a strict, codified **THETA-POLICY.md** that includes:
+- Hard blocks on certain strategies or underlyings
+- No-call list enforcement (core conviction names are never shorted or hedged against)
+- Premium-collection rules (target delta, DTE, strike selection)
+- Risk limits (max portfolio margin usage, max loss per trade)
+- Explicit approval gates for any non-standard trade
+
+The goal is simple: harvest theta decay on AI infra equities you already want to own long-term, turning volatility into yield while the core thesis compounds.
+
+### 5. Quarterly Thesis Audits & Recursive Learning
+Every 90 days Dexter produces a full written report that:
+- Compares portfolio performance vs three benchmarks (BTC, SPY, GLD)
+- Audits where the original SOUL.md thesis was right or wrong
+- Proposes explicit “delta” changes to the thesis
+- Feeds the learnings back into the next quarter’s decision loop
+
+This recursive feedback is powered by the same autonomous research loops (AutoResearch-MLX) that keep Dexter’s reasoning sharp. The agent literally improves its own investment process over time.
+
+### 6. Risk Management Layer (Non-Negotiable)
+- **Venue separation** — already covered
+- **Policy enforcement** — THETA-POLICY.md and SOUL.md are treated as code
+- **Concentration monitoring** — real-time alerts
+- **Kill switches** — any position that violates thesis rules is flagged for immediate review
+- **Explicit human approvals** — high-conviction or regime-change moves require your confirmation before execution
+- **Audit trail** — every trade, every decision, every report is logged locally
+
+### Bottom Line: Intelligence That Compounds Capital
+Dexter turns the five-layer AI infrastructure stack (Energy → Chips → Infrastructure → Models → Applications) into a **self-driving portfolio**. The same real-time reasoning that powers frontier models is now applied to your personal capital allocation — grounded in your convictions, executed with institutional-grade discipline, and improved every quarter.
+
+It is not a robo-advisor. It is not a signals bot. It is a personal AI hedge fund that lives in your terminal, reads your soul file, manages real money across off-chain and on-chain venues, and never stops learning.
+
+The loop is closed. The capital is compounding. The only input required from you is an honest, updated SOUL.md.
+
+That is Dexter’s strategy in full. Simple structure, ruthless discipline, autonomous execution — all built on the same infrastructure thesis the world is racing to build.
