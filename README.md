@@ -420,6 +420,8 @@ All three share the same optimization mindset: define an evaluatable metric, run
 
 Three repos. One thesis. Every metric that can be autoresearched, will be.
 
+→ **[Read the full VINCE build story](VINCE.md)** — what we built, why recursion + ML is the only durable edge, the 15-phase delivery arc, the operator playbook, and the proof system that only promotes when uplift, confidence, depth, and safety all agree.
+
 ---
 
 ## Contributing
