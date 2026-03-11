@@ -402,6 +402,26 @@ For BTC-core decisions specifically, see [BTC.md](BTC.md). The short version: `S
 
 ---
 
+## VINCE: The Frontend
+
+[VINCE](https://github.com/eliza420ai-beep/vince) is the companion project built in parallel — 1,200+ commits, seven days a week, fifteen hours a day. It started as an ElizaOS terminal build and became something larger: a live paper-trading intelligence engine with a recursive improvement loop, a feature store, a multi-agent swarm (Sentinel, Oracle, Eliza), a causal-uplift proof layer, and a Python ML training path that runs locally.
+
+The architecture now converging:
+
+| Layer | Repo | Role |
+|-------|------|------|
+| **Core CLI** | Dexter (this repo) | Thesis-driven research, real broker execution, options theta, quarterly attribution |
+| **Research backend** | [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) | 18 analyst agents, adversarial conviction challenge, parameter autoresearch (Sharpe metric) |
+| **Frontend terminal** | [VINCE](https://github.com/eliza420ai-beep/vince) | ElizaOS agent swarm, live paper bot, feature store, flywheel score, causal uplift proof |
+
+All three share the same optimization mindset: define an evaluatable metric, run overnight experiments, commit only the winners.
+
+**Forge** is the next step for VINCE — the Karpathy-style autoresearch loop applied to VINCE’s own reasoning layer. Instead of tuning model weights, Forge mutates agent prompts, gate policies, swarm collaboration rules, and feature engineering logic. The evaluation harness is VINCE’s existing paper-bot replay engine. The metric: causal uplift × Sharpe × flywheel score — the same numbers the operator playbook already tracks. The ratchet: git commit winners, revert losers. You wake up to tighter gates, smarter swarm behavior, and a one-paragraph summary of what changed.
+
+Three repos. One thesis. Every metric that can be autoresearched, will be.
+
+---
+
 ## Contributing
 
 Fork, branch, commit, push, open a PR. Keep PRs small and focused.
