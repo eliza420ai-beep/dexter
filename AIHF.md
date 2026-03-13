@@ -262,3 +262,129 @@ The full integration proposed in [`docs/PRD-AIHF-DOUBLE-CHECK.md`](docs/PRD-AIHF
 4. returning a structured report inside Dexter
 
 That is the "autopilot" goal: not replacing Dexter, but giving Dexter a built-in independent second opinion from AIHF.
+
+### AI Hedge Fund Second-Opinion API (Sleeve-Aware)
+
+Dexter can ask the AI Hedge Fund (AIHF) for a structured second opinion on a **single sleeve** (tastytrade or Hyperliquid HIP-3). The contract is a `PortfolioDraft` JSON plus a few extra fields.
+
+#### Request shape (HedgeFundRequest-compatible)
+
+Dexter POSTs to AIHF:
+
+```http
+POST http://localhost:8000/api/v1/second-opinion/runs
+Content-Type: application/json
+```
+
+Body (minimal example):
+
+```json
+{
+  "sleeve": "tastytrade",
+  "params_profile": "tastytrade_factors_on",
+  "tickers": ["ASML", "AMAT", "KLAC", "LRCX"],
+  "graph_nodes": [...],
+  "graph_edges": [...],
+  "margin_requirement": 0.5,
+  "portfolio_positions": [],
+  "model_name": "gpt-4.1",
+  "model_provider": "openai",
+  "api_keys": {
+    "FINANCIAL_DATASETS_API_KEY": "..."
+  }
+}
+```
+
+- **`sleeve`**: `"tastytrade"` or e.g. `"hl_hip3"` so AIHF knows which sleeve this belongs to.
+- **`params_profile`**: which config to use, e.g.:
+  - `"tastytrade_baseline"` – technical-only reference,
+  - `"tastytrade_factors_on"` – uses `params_tastytrade_sleeve.py`,
+  - `"hl_hip3_factors_on"` – uses `params_hl_hip3_sleeve.py`.
+- `tickers`, `graph_nodes`, `graph_edges`, `margin_requirement`, `portfolio_positions`, `model_*`, `api_keys` are the usual HedgeFundRequest fields.
+
+AIHF responds:
+
+```json
+{
+  "run_id": 123,
+  "status": "queued"
+}
+```
+
+Dexter should then:
+
+1. Poll status:
+
+   ```http
+   GET /api/v1/second-opinion/runs/{run_id}
+   ```
+
+2. When `status` is `COMPLETE` or `ERROR`, fetch the result:
+
+   ```http
+   GET /api/v1/second-opinion/runs/{run_id}/result
+   ```
+
+   Response (shape simplified):
+
+   ```json
+   {
+     "run_id": 123,
+     "status": "COMPLETE",
+     "results": {
+       "decisions": { "ASML": { "action": "BUY", "confidence": 78 }, "...": "..." },
+       "analyst_signals": { "...": "..." }
+     },
+     "error_message": null
+   }
+   ```
+
+#### Optional: shell out to the helper client
+
+Dexter can also just call the helper script in the AIHF repo:
+
+```bash
+python scripts/dexter_second_opinion_client.py \
+  --draft path/to/portfolio_draft_tastytrade.json \
+  --base-url http://localhost:8000 \
+  --output-dir ./second_opinion_runs \
+  --params-profile tastytrade_factors_on \
+  --run-report
+```
+
+Where `portfolio_draft_tastytrade.json` looks like:
+
+```json
+{
+  "sleeve": "tastytrade",
+  "params_profile": "tastytrade_factors_on",
+  "assets": [
+    { "symbol": "ASML", "target_weight_pct": 8.0 },
+    { "symbol": "AMAT", "target_weight_pct": 6.0 }
+  ],
+  "graph_nodes": [...],
+  "graph_edges": [...],
+  "margin_requirement": 0.5,
+  "portfolio_positions": [],
+  "model_name": "gpt-4.1",
+  "model_provider": "openai"
+}
+```
+
+The helper will:
+
+- POST the appropriate body to `/api/v1/second-opinion/runs`.
+- Poll until the run completes.
+- Save `second_opinion_run_result_<run_id>.json`.
+- If `--run-report` is set, run `autoresearch.second_opinion_report` to print **Strong agree / Mild disagree / Hard disagree** buckets, including:
+
+```text
+=== Second-opinion context ===
+  Sleeve         : tastytrade
+  Params profile : tastytrade_factors_on
+```
+
+Dexter can either:
+
+- Use this script directly (simple shell integration), or
+- Reuse the same request/response shapes in a native Python client and build its own reporting / Substack narrative from the `decisions` and `SecondOpinionSummary` layer.
