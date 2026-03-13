@@ -388,3 +388,91 @@ Dexter can either:
 
 - Use this script directly (simple shell integration), or
 - Reuse the same request/response shapes in a native Python client and build its own reporting / Substack narrative from the `decisions` and `SecondOpinionSummary` layer.
+
+## Full Test Runs (AIHF + Dexter)
+
+The AIFD recommends two full test runs: one for **backtest sanity checks** inside AIHF and one for the **end-to-end Dexter → AIHF second-opinion loop**.
+
+### 1) Full-sleeve backtest sanity run (AIHF)
+
+From the AIHF repo root:
+
+```bash
+# 1. Make sure caches are still green
+poetry run python -m autoresearch.validate_cache \
+  --universes tastytrade_sleeve_long,hl_hip3_sleeve_long \
+  --start 2018-01-01 \
+  --end 2026-03-07
+```
+
+Then run **both sleeves, baseline vs factors**:
+
+```bash
+# TASTYTRADE — baseline (technical only)
+poetry run python -m autoresearch.evaluate \
+  --params autoresearch.params \
+  --prices-path prices_tastytrade_sleeve_long.json \
+  --tickers ASML,AMAT,KLAC,LRCX,SNPS,CDNS,ANET,AVGO,VRT,MRVL,CEG,EQT,WDC,STX,LITE
+
+# TASTYTRADE — factors ON
+poetry run python -m autoresearch.evaluate \
+  --params autoresearch.params_tastytrade_sleeve \
+  --prices-path prices_tastytrade_sleeve_long.json
+
+# HIP-3 — baseline
+poetry run python -m autoresearch.evaluate \
+  --params autoresearch.params \
+  --prices-path prices_hl_hip3_sleeve_long.json \
+  --tickers NVDA,TSM,MSFT,AMZN,GOOGL,META,PLTR,ORCL,MU,COIN,HOOD,TSLA,AAPL,RTX,GLD,SLV
+
+# HIP-3 — factors ON
+poetry run python -m autoresearch.evaluate \
+  --params autoresearch.params_hl_hip3_sleeve \
+  --prices-path prices_hl_hip3_sleeve_long.json
+```
+
+This gives you four Sharpe/Sortino/DD/return lines for whole-sleeve performance with and without factor overlays.
+
+### 2) End-to-end Dexter → AIHF second-opinion run
+
+1. **Start the AIHF backend** (in the AIHF repo):
+
+   ```bash
+   uvicorn app.backend.main:app --reload
+   ```
+
+2. **Prepare a `PortfolioDraft` JSON** in the Dexter repo (e.g. `portfolio_draft_tastytrade.json`):
+
+   ```json
+   {
+     "sleeve": "tastytrade",
+     "params_profile": "tastytrade_factors_on",
+     "assets": [
+       { "symbol": "ASML", "target_weight_pct": 8.0 },
+       { "symbol": "AMAT", "target_weight_pct": 6.0 }
+     ],
+     "graph_nodes": [...],
+     "graph_edges": [...],
+     "margin_requirement": 0.5,
+     "portfolio_positions": [],
+     "model_name": "gpt-4.1",
+     "model_provider": "openai"
+   }
+   ```
+
+3. **From the AIHF repo, run the helper client**:
+
+   ```bash
+   python scripts/dexter_second_opinion_client.py \
+     --draft path/to/portfolio_draft_tastytrade.json \
+     --base-url http://localhost:8000 \
+     --output-dir ./second_opinion_runs \
+     --params-profile tastytrade_factors_on \
+     --run-report
+   ```
+
+You should see:
+
+- A `run_id`, status polling, and a saved `second_opinion_run_result_<run_id>.json`.
+- A terminal report with **Strong agree / Mild disagree / Hard disagree** buckets, plus the sleeve and params profile used for the run.
+
