@@ -11,9 +11,9 @@
     ╚═══╝  ╚═╝╚═╝  ╚═══╝ ╚═════╝╚══════╝
 ```
 
-### _Push, not pull._
+### _The machine should always be running._
 
-**Unified data intelligence** for options and perps, with a **self-improving paper trading bot** at the core — powered by [Dexter](README.md) as the thesis engine and the [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) as the research backend.
+**Short-term monitoring terminal** for immediate action — options on Hypersurface, perps signals, portfolio drift, OI/funding/L/S ratios, Mando Minutes. Part of a three-layer stack: VINCE (hours→weeks), [Dexter](README.md) (months→years, thesis engine), [AIHF](https://github.com/eliza420ai-beep/ai-hedge-fund) (cycle-scale, 18-analyst second opinion).
 
 > **⚠️ Active refactor in progress.** The sections below document what VINCE is today. The [Refactor Goals](#refactor-goals) section immediately below describes where it is going. Read that first.
 
@@ -23,26 +23,89 @@
 
 ## Quick read (start here)
 
-**What VINCE is:** a recursive trading intelligence terminal — paper bot signal research, onchain options assistant, self-improving overnight engine. Part of a three-repo stack with [Dexter](README.md) (thesis + BTC regime) and the [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) (18-analyst research backend).
+**What VINCE is:** the **MONITOR THE SITUATION** terminal. VINCE watches the portfolios (`portfolio_hyperliquid.json`, `portfolio_tastytrade.json`, `portfolio_watchlist.json`), pulls free-tier perps data (OI, funding rates, L/S ratios, liquidations), reads the news feed (Mando Minutes), tracks Hyperliquid tickers in real time, and surfaces the signals that feed the thesis born here and captured in [SOUL.md](SOUL.md). It is also the UX layer where Solus handles onchain options on Hypersurface and Echo surfaces alpha from X — and where Forge runs overnight to self-improve the whole stack on Apple Silicon.
 
 **What v1 proved:** the recursive proof loop works. Feature store → ONNX models → causal gates → policy update → repeat. 1,200+ commits, ten agents, full attribution surface. The loop compounds. The surface was too wide.
 
-**What v2 does:** strips to three agents, ships Forge overnight autoresearch, and repositions VINCE as the frontend terminal for the full stack.
+**What v2 does:** strips to the monitoring core, ships Forge as the primary overnight autoresearcher, and repositions VINCE as the frontend terminal where the thesis is born and re-underwritten.
 
 | Keep | Move | Cut |
 |------|------|-----|
 | **Solus** — weekly Hypersurface options (core use case) | **Echo** → Dexter skill | Memes + NFT tracking |
-| **Otaku** — reframed as ERC-8004 agent identity + x402 skills | **Kelly** → OpenClaw daemon | Polymarket / Oracle |
-| **VINCE data agent** — perps data feed for Solus + Otaku | **Eliza** → Perplexity pipeline | Flywheel score |
-| **Forge** — nightly MLX autoresearch, `causal_uplift × Sharpe` | **Clawterm + Sentinel** → Claude Code skills | Memetics tab |
+| **Otaku** — reframed as ERC-8004 agent identity + x402 skills | **Kelly** → skill for Perplexity Computer, OpenClaw, Nemoclaw (Nvidia), and whatever next "OpenClaw" emerges | Polymarket / Oracle |
+| **VINCE data agent** — perps data feed (OI, funding, L/S, liquidations) for Solus + Otaku | **Eliza** → (1) research skill via Perplexity Computer + (2) Substack writing assistant in the AIHF repo | Flywheel score |
+| **Forge** — nightly MLX autoresearcher, `causal_uplift × Sharpe × brier_calibration` | **Clawterm + Sentinel** → skills for Claude Code agents | Memetics tab |
 
-**The operator stack:** Perplexity (research) → Claude Cowork (review + briefs) → OpenClaw (Kelly 24/7 daemon) + VINCE (trading terminal). Three machines. No overlap.
+**The operator stack:** Perplexity (research) → Claude Cowork (review + briefs) → OpenClaw/Nemoclaw (Kelly 24/7 daemon) + VINCE (monitoring terminal + thesis birthplace). Three machines. No overlap.
 
 **Live execution:** spun out to a standalone repo. Two candidates — [`agent-cli`](https://github.com/eliza420ai-beep/agent-cli) (Python, REFLECT self-improvement, APEX orchestrator) or [`perp-cli`](https://github.com/eliza420ai-beep/perp-cli) (TypeScript, multi-DEX, CCTP V2). VINCE proves the signal; the execution repo trades it live.
 
+→ [Monitor The Situation](#monitor-the-situation) — what VINCE watches and why  
+→ [Forge — Primary Focus](#1--add-mlx-top-priority) — overnight autoresearcher  
 → [Refactor Goals](#refactor-goals) — full seven-goal breakdown  
 → [Agent-by-agent](#7--agent-by-agent-refactor-what-stays-what-moves-what-gets-rethought) — what happens to each of the ten agents  
 → [V1 Reference](#v1-reference-what-we-built) — what exists in the codebase today
+
+---
+
+## The Three-Layer System — Time Horizons
+
+The full research stack runs across three repos, each with a distinct time horizon and job. Understanding which layer answers which question is the most important thing about working with this system.
+
+| Layer | Repo | Time horizon | Primary job |
+|-------|------|-------------|-------------|
+| **Short-term** | **VINCE** (this repo) | Hours → weeks | Monitor the situation. Watch OI, funding, L/S ratios, portfolio drift, Mando Minutes, Hyperliquid tickers. Execute Solus options ritual. Surface signals that require immediate action. Run Forge overnight. The machine that has to be running. |
+| **Mid-term** | **Dexter** | Months → 2–3 years | Establish and maintain the investment thesis captured in SOUL.md. Build the two active sleeves (tastytrade + Hyperliquid). Re-underwrite the thesis when VINCE's monitoring surfaces a regime shift. Where the conviction map lives. |
+| **Long-term** | **AIHF** | Cycle-scale → multi-year | 18-analyst second opinion on the portfolios. Challenges the thesis against a long-term structural view. Runs `/double-check` and conviction scoring. The Bench that scored 15/15 SHORT on the equipment sleeve — the result that triggered the tastytrade rotation. |
+
+**Why the split matters:** the essay ["The Machine Was Always Running"](https://ikigaistudio.substack.com/p/the-machine-was-always-running) is the honest accounting of what happens when the three layers collapse into one. The Hypersurface put-selling machine was running — $3,000/week in upfront premiums, live and available — but the short-term monitoring layer wasn't in it. Twelve weeks of premiums missed not because the thesis was wrong, not because the mid-term strategy was flawed, but because the immediate-action layer wasn't staffed. VINCE is the answer to that. The machine should always be monitored. The airdrop T&C window should never expire unnoticed. The $125,000 BTC exit should not require a manual decision in the moment — it should be surfaced by a system that has been watching the same signals since 2013.
+
+Each layer has a different failure mode:
+- **VINCE failure** = missed executions. The thesis is right, the machine is running, but no one is at the terminal when the window opens. The HYPE airdrop. The twelve weeks of uncollected Solus premiums. The $125,000 BTC exit that didn't happen.
+- **Dexter failure** = wrong thesis. The monitoring is active but the conviction map is stale or structurally incorrect. The mid-term framework needs re-underwriting.
+- **AIHF failure** = blind spots. The thesis and the monitoring are both internally consistent but unchallenged. The Bench scores what Dexter and VINCE can't see from inside.
+
+The three layers are designed to catch each other's failure modes.
+
+---
+
+## Monitor The Situation
+
+This is VINCE's primary job. Before any trade, before any options ritual, before any overnight Forge run — the terminal reads the situation.
+
+### What VINCE monitors
+
+**Portfolio state** — the three JSON files are the ground truth:
+- `portfolio_hyperliquid.json` — on-chain positions (NVDA, TSM, META, MSFT, AMZN, GOOGL, PLTR, ORCL, MU, COIN, HOOD, CRCL, RTX, GLD, SLV). Weights, drift vs target, and any Hyperliquid-specific margin or liquidation risk.
+- `portfolio_tastytrade.json` — current tastytrade active sleeve. In regime-risk periods this holds quality compounders (see SOUL.md); when equipment conditions improve, it rotates back to picks-and-shovels. VINCE surfaces which regime we're in.
+- `portfolio_watchlist.json` — the staging pipeline. Names under consideration for the next tastytrade rotation. VINCE flags when a watchlist name is crossing a relevant threshold.
+
+**Perps data feed (free-tier APIs)** — VINCE data agent pulls continuously:
+- Open interest (OI) by asset — rising OI in the direction of the trade is confirmation; falling OI is a caution flag
+- Funding rates — extreme positive funding = crowded longs, extreme negative = crowded shorts; both are regime signals
+- Long/short ratios — retail vs institutional divergence, top-trader positioning
+- Liquidation heat maps — where forced exits are clustered, which levels matter
+- 24h volume and volatility by ticker — used to flag unusual activity before Solus writes a strike
+
+**News — Mando Minutes** — the morning read that anchors the day's thesis check. VINCE ingests the daily brief and flags any item that touches the SOUL.md thesis: BTC regime signals, equipment capex news, power/energy policy, semiconductor earnings revisions, macro macro macro. Items that change the sizing picture get escalated.
+
+**Hyperliquid tickers** — VINCE watches the universe of HIP-3 perps (tokenized equities, indices, commodities) alongside the core crypto perps. Unusual moves in a ticker that sits in any of the three portfolios get surfaced immediately. Correlation breaks, sector rotations, and overnight gap-ups/downs in Hyperliquid-listed equities are the first signal that a re-underwriting of the thesis may be needed.
+
+### Thesis birthplace — the re-underwriting loop
+
+VINCE is not just a dashboard. It is where the investment thesis is stress-tested in real time.
+
+The loop:
+```
+VINCE monitors situation (perps data, portfolio drift, news, Hyperliquid tickers)
+  → anomaly or regime shift detected
+  → brainstorm with Solus (onchain options angle — is there a hedge, a structure, an entry?)
+  → Echo surfaces relevant alpha from X (what is CT saying, what is early consensus?)
+  → Forge runs overnight experiments on the updated thesis parameters
+  → output: updated SOUL.md conviction, updated portfolio_watchlist.json, or a direct tastytrade rebalance signal
+```
+
+When a macro event, earnings print, or perps dislocation is significant enough to change the thesis — not just the trade — the output is a SOUL.md re-underwriting. The Bench (AIHF) may be invoked for a second-system check. That is the full loop from monitoring to thesis.
 
 ---
 
@@ -70,9 +133,11 @@ FORGE_TARGET_METRIC=causal_uplift_sharpe
 
 No cloud. No extra bills. 300–600 experiments/hour on M2/M3/M4 unified memory.
 
-### 2 — Remove lifestyle (Kelly → OpenClaw + the Three Machines)
+### 2 — Remove lifestyle (Kelly → Perplexity Computer, OpenClaw, Nemoclaw, and whatever comes next)
 
 Kelly and `plugin-kelly` are **removed from the VINCE core**. This is not a demotion — it's Kelly finally running on the infrastructure it always deserved.
+
+Kelly becomes a portable skill — an `AGENTS.md` / `SKILL.md` file that can be installed into any capable execution layer: Perplexity Computer (research + lifestyle reasoning), OpenClaw (24/7 daemon), Nemoclaw by Nvidia (launching imminently), and whatever the next ambient-always-on agent platform turns out to be. Kelly's value is not the runtime — it is the 1,200 knowledge files and the encoded judgment about wine, health, travel, dining, and the life the trading system is designed to protect. That judgment is portable. The VINCE plugin is not the right container for it.
 
 The argument is laid out cleanly in [The Three Machines](https://ikigaistudio.substack.com/p/the-three-machines) (ikigaistudio, Mar 2026): the operator stack that has emerged is three layers, not one.
 
@@ -247,9 +312,15 @@ Both agents exist to help us as developers — Clawterm for OpenClaw skills/term
 
 ---
 
-#### Eliza (knowledge research) → hand off to Perplexity
+#### Eliza (knowledge research) → two skills, two repos
 
-Eliza's core job in VINCE was extending the knowledge base — 1,200+ files built through research sessions, document ingestion, and structured knowledge encoding. That was valuable. But Perplexity is the right machine for this. It searches in real time, cites sources, synthesizes current information, and hands off clean research to Claude for writing and reasoning. Eliza as a knowledge-ingestion agent inside VINCE is a manual, fragile substitute for what Perplexity does natively and better. The VINCE knowledge base becomes a Perplexity → Claude Cowork → commit pipeline. Eliza as a plugin gets removed. The 1,200 knowledge files stay.
+Eliza is not cut — it is refactored into two portable skills deployed in their natural homes:
+
+1. **Research skill via Perplexity Computer** — Eliza's knowledge-ingestion logic becomes a skill that runs inside Perplexity Computer. Perplexity searches in real time, cites sources, synthesizes current information. The skill wraps the structured knowledge-encoding workflow (source ranking, payload formatting, downstream agent handoff) that Eliza perfected in VINCE. The VINCE knowledge base becomes a Perplexity → Claude Cowork → commit pipeline.
+
+2. **Substack writing assistant in the AIHF repo** — Eliza's content layer (the 1,200+ knowledge files, the Substack publishing workflow, the essay-structuring logic) becomes a writing-assistant skill installed in the [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) repo. AIHF is the natural home: it runs the 18-analyst research backend, generates `/double-check` outputs and conviction reports, and now also drafts Substack essays from those outputs. The Eliza writing skill translates AIHF research into publishable form — thesis essays, portfolio update posts, regime briefings.
+
+Eliza as a VINCE plugin is removed. The knowledge files and publishing workflow survive as portable skills in the right environments.
 
 ---
 
@@ -275,16 +346,17 @@ This is not a peripheral experiment. This is the proof-of-concept for the thesis
 
 | Agent | VINCE v2 status | New home (if moved) |
 |-------|----------------|---------------------|
-| **Solus** | ✅ Core focus | — |
+| **Solus** | ✅ Core focus — Hypersurface options + onchain brainstorming | — |
 | **Otaku** | ✅ Reframed → ERC-8004 identity + x402 skills | — |
-| **Echo / x-researcher** | ➡️ Move | Dexter skill |
-| **Clawterm** | ➡️ Move | Claude Code / Codex skill |
-| **Sentinel** | ➡️ Move | Claude Code / Codex skill |
-| **Eliza** | ➡️ Hand off | Perplexity → Cowork pipeline |
+| **VINCE (data agent)** | ✅ Core perps data feed — OI, funding rates, L/S ratios, liquidations | — |
+| **Forge** | ✅ Primary overnight focus — MLX autoresearcher, `causal_uplift × Sharpe × brier_calibration` | — |
+| **Echo / x-researcher** | ➡️ Move | Dexter skill (alpha from X feeds thesis) |
+| **Clawterm** | ➡️ Move | Claude Code agent skill |
+| **Sentinel** | ➡️ Move | Claude Code agent skill |
+| **Eliza** | ➡️ Two skills | (1) Research via Perplexity Computer; (2) Substack writing assistant in AIHF repo |
+| **Kelly** | ➡️ Portable skill | Perplexity Computer, OpenClaw, Nemoclaw (Nvidia), and next OpenClaw-style platforms |
 | **Oracle** | ⏸️ Stub, no dev | AIHF if revisited |
-| **Kelly** | ➡️ Move (Goal 2) | OpenClaw daemon |
-| **Naval** | 🔲 Evaluate | Philosophy → Dexter SOUL.md review? |
-| **VINCE (data agent)** | ✅ Core perps data feed | — |
+| **Naval** | 🔲 Evaluate | Possible → Dexter SOUL.md review layer |
 
 ---
 
@@ -475,15 +547,16 @@ V1 had ten agents in clear lanes. V2 is a smaller, sharper squad — see the ful
 
 | Agent | V1 lane | V2 verdict |
 | :--- | :--- | :--- |
-| **Solus** | Hypersurface options: strike ritual, assignment prob (GBM + ML), Brier calibration, tail risk, copula | ✅ **Core focus** — stays, gets all resources |
+| **Solus** | Hypersurface options: strike ritual, assignment prob (GBM + ML), Brier calibration, tail risk, copula | ✅ **Core focus** — stays; onchain options brainstorming for Hypersurface |
 | **Otaku** | Only agent with a wallet. Morpho, CDP, Bankr, execution graduation L0→L3 | ✅ **Reframed** — ERC-8004 identity + x402 skills |
-| **VINCE** | Objective data: perps, memes, news, paper bot, 15+ signal sources | ✅ **Core perps data feed** — scoped to perps + options |
-| **ECHO** | CT sentiment, X research, BTC long-term sentiment signal | ➡️ **Move** — Dexter skill (thesis input, not perps input) |
-| **Clawterm** | AI agents terminal: OpenClaw skills, setup tips, trending | ➡️ **Move** — Claude Code / Codex skill |
-| **Sentinel** | Ops, cost steward, ONNX health, PRDs, repo improvements | ➡️ **Move** — Claude Code / Codex skill |
-| **Eliza** | Knowledge research, Substack content, 1,200+ knowledge files | ➡️ **Hand off** — Perplexity → Claude Cowork pipeline |
-| **Oracle** | Polymarket discovery, latency arb, Kelly-sized paper trades | ⏸️ **Stub** — failed to produce real edge; no active dev |
-| **Kelly** | Lifestyle concierge: wine, dining, travel, health, flywheel score | ➡️ **Move** — OpenClaw daemon (see Goal 2) |
+| **VINCE** | Objective data: perps, memes, news, paper bot, 15+ signal sources | ✅ **Core data feed** — OI, funding rates, L/S ratios, liquidations, Mando Minutes, portfolio state |
+| **Forge** | — (new in v2) | ✅ **Primary focus** — MLX autoresearcher, nightly `causal_uplift × Sharpe × brier_calibration`, Telegram push |
+| **ECHO** | CT sentiment, X research, BTC long-term sentiment signal | ➡️ **Move** — Dexter skill (alpha from X feeds thesis, not perps) |
+| **Clawterm** | AI agents terminal: OpenClaw skills, setup tips, trending | ➡️ **Move** — Claude Code agent skill |
+| **Sentinel** | Ops, cost steward, ONNX health, PRDs, repo improvements | ➡️ **Move** — Claude Code agent skill |
+| **Eliza** | Knowledge research, Substack content, 1,200+ knowledge files | ➡️ **Two skills** — (1) research via Perplexity Computer; (2) Substack writing assistant in AIHF repo |
+| **Oracle** | Polymarket discovery, latency arb, Kelly-sized paper trades | ⏸️ **Stub** — never produced real edge; no active dev |
+| **Kelly** | Lifestyle concierge: wine, dining, travel, health, flywheel score | ➡️ **Portable skill** — Perplexity Computer, OpenClaw, Nemoclaw (Nvidia), next ambient platform |
 | **Naval** | Philosophy, mental models, standup conclusions | 🔲 **Evaluate** — possible → Dexter SOUL.md review layer |
 
 One conversation, ask any teammate by name; standups 2x/day. [MULTI_AGENT.md](docs/MULTI_AGENT.md)
@@ -526,17 +599,19 @@ VINCE v1 pushes daily market intel (options, perps, memes, DeFi) to Discord and 
 
 ### V2 (where this is going)
 
-VINCE v2 is a focused trading intelligence terminal — not a ten-agent lifestyle platform.
+VINCE v2 is the **MONITOR THE SITUATION** terminal — the eyes of the portfolio system and the birthplace of the thesis that re-underwrites [SOUL.md](SOUL.md).
 
-**Three agents. One thesis. One proof system.**
+**Four agents. One monitoring loop. One thesis feedback channel.**
 
-- **Solus** runs the weekly onchain options strategy on Hypersurface. Strike ritual, assignment probability (GBM + ML Brier calibration), tail risk, portfolio copula. This is the weekly high-stakes workflow VINCE was always built to serve.
-- **Otaku** carries VINCE's on-chain identity — ERC-8004 registration, reputation from real Solus Brier scores, x402 skill endpoints. The proof-of-concept for the thesis that autonomous agents need verifiable, portable identity.
-- **VINCE (data agent)** feeds Solus and Otaku with perps data from Dexter and AIHF research outputs. Scoped to perps + options. No memes. No Polymarket. No lifestyle.
+- **VINCE (data agent)** is the pulse of the system. OI, funding rates, L/S ratios, liquidation heat maps, portfolio drift across the three JSON files, Mando Minutes news — everything the thesis needs to stay calibrated to reality.
+- **Solus** runs the weekly onchain options strategy on Hypersurface. Strike ritual, assignment probability (GBM + ML Brier calibration), tail risk, portfolio copula. When VINCE's data feed surfaces an anomaly, Solus is where you brainstorm the options expression of the thesis.
+- **Otaku** carries VINCE's on-chain identity — ERC-8004 registration, reputation from real Solus Brier scores, x402 skill endpoints.
+- **Forge** is the primary overnight focus. Runs on Apple Silicon, mutates prompts, gate policies, and ML weights against the paper bot replay engine. Metric: `causal_uplift × Sharpe × brier_calibration`. Reports via Telegram push to Claude Cowork. Every morning: a commit of winners, a revert of losers, a one-paragraph summary. This is where the system gets smarter while you sleep.
 
-**Forge** runs overnight on Apple Silicon, mutating agent prompts and gate policies against the paper bot replay engine. Every morning: a commit of winners, a revert of losers, a one-paragraph summary. `causal_uplift × Sharpe` is the only score that matters.
-
-Everything else — Echo, Clawterm, Sentinel, Eliza, Oracle, Kelly, Naval — moves to the right machine (Dexter, Claude Code, Perplexity, OpenClaw) or is cut.
+Everything else — Echo, Clawterm, Sentinel, Eliza, Oracle, Kelly, Naval — moves to the right machine or becomes a portable skill:
+- Kelly → Perplexity Computer, OpenClaw, Nemoclaw (Nvidia), and next ambient platform
+- Eliza → (1) Perplexity Computer research skill + (2) Substack writing assistant in AIHF repo
+- Clawterm + Sentinel → Claude Code agent skills
 
 ---
 
@@ -701,7 +776,11 @@ Conclusion: the ML logic can adjust parameters from data; improvement on live da
 
 ## North Star
 
-You never have to "chat" with VINCE. He pings you. Proactive agent: day report (ALOHA), trades and reasoning, close results and PnL. Chat remains for deep dives. Stay in the game without 12+ hours on screens.
+You never have to "chat" with VINCE. He pings you.
+
+VINCE watches the portfolios, the perps data, the news, and the Hyperliquid tickers. When the situation changes — a funding rate spike, a thesis-relevant headline in Mando Minutes, a portfolio drift beyond threshold, an unusual OI print on a name in `portfolio_watchlist.json` — VINCE surfaces it. When the situation warrants a thesis re-underwriting, the output flows to SOUL.md. When it warrants an options structure, Solus handles it. When it warrants an overnight experiment, Forge runs it.
+
+Stay in the game without 12+ hours on screens. The terminal monitors so you don't have to.
 
 ---
 

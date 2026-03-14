@@ -2,7 +2,15 @@
 
 > "The highest-quality object-centric L1 in crypto: real parallel execution, real DeFi + gaming traction, real ETF inflows."
 
-- Target price: **$5 by August 2026**
+---
+
+**⚠️ Regime note — March 2026**
+
+The structural thesis is intact. SUI is not positioned as a core holding. In a fiat-credit contraction where BTC has written down 50% from its peak, the correct posture for high-quality altcoins is **watchlist, not core**. The thesis waits for the regime to clear. See [Regime and position status](#regime-and-position-status) below.
+
+---
+
+- Target price: **$5 by August 2026** — *under review pending regime confirmation*
 - Reference price: **~$0.95 as of March 2026**
 - Upside: **~5x**
 - Core view: In a fiat-credit contraction where Bitcoin can still make new highs but most altcoins bleed, the highest-conviction L1 long is the object-centric high-performance chain with sub-second finality, real DeFi activity, real staking alignment, and newly live spot ETF access.
@@ -205,6 +213,41 @@ Sui is one of the few crypto projects that currently combines:
 - Real DeFi and consumer-app traction
 - A visible path to rerating as the high-performance object-centric L1
 
-That is why we are buyers here, why `SUI` deserves to sit alongside `SOL` as a top liquid high-throughput L1 position, and why it makes sense to rotate out of inferior chains and weaker token stories into the network that looks best positioned for the next wave of parallel crypto activity.
+The structural thesis is valid. The current regime says wait.
 
-> Pay attention. The `$SUI` man is here.
+---
+
+## Regime and position status
+
+### What the current macro is telling us
+
+BTC has written down roughly 50% from its $125,000 peak. The cycle model projects a bottom in the $50,000–$60,000 range before the next halving cycle begins. In that environment, capital is being consolidated into BTC core (via Hypersurface puts) and the highest-conviction non-BTC expression (HYPE). Every alt dollar that is not earning yield or compounding through a machine is a dollar working against you while the cycle resolves.
+
+This is not a SUI-specific objection. SUI's architecture and traction are genuinely differentiated from most of the altcoin field. But "differentiated from most altcoins" does not mean "immune to a 50% BTC drawdown cycle." In the pattern we have observed since 2013, high-quality alts bleed alongside everything else when the BTC core is in correction. The correct entry for high-quality alts is not before the BTC bottom — it is during and after it.
+
+### The SOL lesson, applied to SUI
+
+We held 1,400 SOL at $140 with a specific plan to put the capital to work via Hypersurface puts. We didn't execute. SOL went to $86. Twelve weeks of inaction cost $36,000 in foregone premium on the same collateral. *[Full account: [The Machine Was Always Running](https://ikigaistudio.substack.com/p/the-machine-was-always-running)]*
+
+The lesson for SUI: if we are not positioned in an alt with a specific machine running on that capital — a yield mechanism, a defined accumulation strategy, a reason the capital is working — then the capital should be in BTC accumulation via Hypersurface, not waiting in an alt for a "cleaner entry" that may never come.
+
+SUI does not currently have an equivalent to the Hypersurface put machine. When it does — when HyperEVM or another venue offers SUI-collateralized yield structures that are as clean as BTC puts on Hypersurface — the thesis becomes executable, not just intellectually valid.
+
+### What would change this
+
+**Upgrade the conviction from watchlist to core position when:**
+
+1. The BTC cycle bottom is confirmed (price + on-chain signals, not just hope). The model projects $50,000–$60,000.
+2. SUI-denominated yield infrastructure exists on Hyperliquid or HyperEVM (HIP-3 SUI perp, Hypersurface SUI options, or equivalent).
+3. `DeepBook V3` and `S2` ship and demonstrate measurable share gains over competing venues.
+4. The regime label shifts from `btc-specific stress` or `gold-led safety` to `risk-on` (BTC and SPY both outperforming GLD).
+
+Until at least conditions 1 and 4 are met, SUI stays on `portfolio_watchlist.json` and is monitored in VINCE alongside the other staging-pipeline names.
+
+### Current portfolio allocation
+
+- **`portfolio_watchlist.json`**: yes — SUI is monitored alongside PANW, CRWD, LLY, NEE, etc.
+- **`portfolio_tastytrade.json`**: no
+- **`portfolio_hyperliquid.json`**: no
+
+> Pay attention. The `$SUI` man is watching. The machine will run when the regime clears.

@@ -4,6 +4,8 @@
 
 Dexter takes the “AI is infrastructure” thesis — energy, chips, data centers, models, applications — and turns it into a portfolio that manages itself based on what you actually believe. Write your real convictions in one file called **SOUL.md**. That’s literally all it cares about. Dexter reads your thesis, sets up **80% Bitcoin** as the core, then **10% stocks/options** and **10% on-chain equities** — all thesis-focused, zero overlap between sleeves.
 
+**Three-layer stack. Three time horizons.** Dexter is the mid-term layer (months → years): thesis establishment, portfolio construction, quarterly attribution. [VINCE](VINCE.md) is the short-term layer (hours → weeks): monitoring OI, funding rates, L/S ratios, Hyperliquid tickers, Mando Minutes, and Solus options on Hypersurface — the machine that has to always be running. [AIHF](https://github.com/eliza420ai-beep/ai-hedge-fund) is the long-term layer (cycle-scale): 18 analyst agents that challenge the thesis from a structural view, running numbers without reading SOUL.md.
+
 It doesn’t buy and forget. It rebalances every week, collects options premium on names you already like, and every quarter it writes a full report asking: *where was your thesis right, where was it wrong?* That loop is the point — keep SOUL.md honest, and everything else compounds. This isn’t a robo-advisor or a signals bot. It’s thesis-first: the conviction constrains the search space, the data fills the positions, the attribution measures the outcome.
 
 The bar is the **Portfolio Builder**: build and maintain a portfolio that beats the benchmarks (S&P 500, NASDAQ, BTC, top hedge funds). The tool doesn’t succeed by answering questions well; it succeeds by producing a portfolio that outperforms. We’re using the AI infrastructure thesis to invest in the AI infrastructure thesis. *[More: [The Researcher Who Thinks](https://ikigaistudio.substack.com/p/the-researcher-who-thinks)]*
@@ -46,7 +48,13 @@ Not a chatbot. A **research loop**: plan → execute → validate → refine. A 
 
 You get weekly rebalance checks (Mondays), quarterly benchmark reports, and optional dollar rebalancing when AUM is set. Regime labels, concentration alerts, investor-letter drafts. Fund ops: AUM config, YTD and since-inception performance, reports in `~/.dexter/`. **VOICE.md** gives every response a consistent tone; override at `~/.dexter/VOICE.md`.
 
-**Two portfolios, zero overlap:** tastytrade sleeve (PORTFOLIO.md) for names *not* on Hyperliquid (e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG — no TSM, AAPL, or any HL-tradable ticker). On-chain sleeve (PORTFOLIO-HYPERLIQUID.md) is for **HIP-3 onchain equities only** (tokenized stocks, commodities, indices) — not crypto. The intended global architecture is **80% BTC core / 10% tastytrade sleeve / 10% Hyperliquid sleeve**. The two sleeves are equally weighted diversification engines whose bar is to outperform **SPY**, **GLD**, and **BTC** over time. Use both sleeves. Suggest both. Save both.
+**Three-portfolio operating structure.** Each portfolio has its own JSON definition and its own job:
+
+- **`portfolio_tastytrade.json`** — Active off-chain sleeve. Regime-aware: holds AI infrastructure equipment and power names at full weight in strong regimes; rotates into quality compounders (LLY, ISRG, NEE, etc.) when equipment faces regime risk. Names not on Hyperliquid only (e.g. AMAT, ASML, LRCX, KLAC, VRT, CEG).
+- **`portfolio_hyperliquid.json`** — On-chain equities sleeve. Fixed exposure to the strongest AI infrastructure leaders available as HIP-3 tokenized equities (NVDA, TSM, PLTR, etc.). 24/7, no tastytrade overlap.
+- **`portfolio_watchlist.json`** — Staging pipeline. Names that passed The Bench but are waiting for regime confirmation before full sleeve entry (PANW, CRWD, NET, LLY, NEE, etc.). Monitored in VINCE; promoted to active sleeves when conviction is load-bearing.
+
+The intended global architecture is **80% BTC core / 10% tastytrade sleeve / 10% Hyperliquid sleeve**. The two active sleeves are equally weighted diversification engines whose bar is to outperform **SPY**, **GLD**, and **BTC** over time.
 
 **tastytrade:** Full theta engine — SOUL-aligned scan (thesis names, not index defaults), THETA-POLICY hard block, strategy preview, roll/repair, analytics. Dry-run before any live order; submit/cancel require explicit approval.
 
@@ -61,7 +69,7 @@ This fork extends [virattt/dexter](https://github.com/virattt/dexter) with a def
 | Layer | What | Why |
 |-------|------|-----|
 | **Portfolio Builder** | Agent owns the outcome: rebalance, benchmark, report. Bar = beat hedge funds, indexes, BTC. Measurement is a number, not “insightful.” | Generic agents answer questions. This one is judged on the portfolio. |
-| **SOUL.md** | Identity + thesis: AI infra supply chain (7 layers), conviction tiers, sizing rules. `80% BTC core / 10% tastytrade sleeve / 10% Hyperliquid sleeve`. “When the evidence conflicts with doctrine, I follow the evidence.” | Not a prompt — a worldview. The edge lives where standard tools can’t see (equipment, EDA, power). SOUL constrains every query. |
+| **SOUL.md** | Identity + thesis: AI infra supply chain (8 layers), conviction tiers, sizing rules. `80% BTC core / 10% tastytrade sleeve / 10% Hyperliquid sleeve`. “When the evidence conflicts with doctrine, I follow the evidence.” | Not a prompt — a worldview. The edge lives where standard tools can’t see (equipment, EDA, power, cybersecurity). SOUL constrains every query. |
 | **HEARTBEAT** | Weekly rebalance vs target. Quarterly report vs S&P, NASDAQ, BTC. Regime label. Newsletter draft when it matters. Dollar rebalancing when AUM set. | Passive monitoring isn't enough. Scheduled action: detect drift, deliver reports. |
 | **VOICE.md** | ikigaistudio tone and structure in every prompt. | Generic output sounds generic. Essays and letters need a recognizable voice. |
 | **Financial Datasets** | Primary source for prices, fundamentals, filings, insider trades, news. Optional Finnhub fallback for price/news when FD is down or rate-limited. | Built for agents: section-level filings, structured JSON. [DATA-API-FINANCIAL-DATASETS.md](docs/DATA-API-FINANCIAL-DATASETS.md). |
@@ -193,7 +201,7 @@ dexter/
 
 ## SOUL and HEARTBEAT
 
-**SOUL.md** in the repo root is injected into every session. It’s not a system prompt — it’s the lens. It defines the coverage universe (seven layers: chip → foundry → equipment → EDA → power → memory → networking), conviction tiering (Core Compounders vs Cyclical vs Speculative vs Avoid), and sizing rules (regime, layer durability, catalyst timing). Standard tools validate the consensus names; the edge lives where they can’t — equipment cycles, EDA complexity, power bottlenecks. Edit SOUL to reflect your thesis. Structure matters more than the names. Recursive updates should flow through saved `THESIS-DELTA-*.md` and `NEXT-QUARTER-TESTS-*.md` artifacts first, then into reviewed SOUL changes.
+**SOUL.md** in the repo root is injected into every session. It’s not a system prompt — it’s the lens. It defines the coverage universe (eight layers: chip → foundry → equipment → EDA → power → memory → networking → cybersecurity (PANW, CRWD, NET)), conviction tiering (Core Compounders vs Cyclical vs Speculative vs Avoid), and sizing rules (regime, layer durability, catalyst timing). Standard tools validate the consensus names; the edge lives where they can’t — equipment cycles, EDA complexity, power bottlenecks. Edit SOUL to reflect your thesis. Structure matters more than the names. Recursive updates should flow through saved `THESIS-DELTA-*.md` and `NEXT-QUARTER-TESTS-*.md` artifacts first, then into reviewed SOUL changes.
 
 **~/.dexter/HEARTBEAT.md** is your monitoring checklist. Weekly: rebalance vs target, regime label, concentration alerts, newsletter draft. Quarterly: performance vs BTC, SPY, GLD; result recorded for since-inception tracking. Keep **~/.dexter/PORTFOLIO.md** (and optionally **PORTFOLIO-HYPERLIQUID.md**) so Dexter can compare actual to target.
 
@@ -402,25 +410,28 @@ For BTC-core decisions specifically, see [BTC.md](BTC.md). The short version: `S
 
 ---
 
-## VINCE: The Frontend
+## VINCE: The Monitoring Terminal
 
-[VINCE](https://github.com/eliza420ai-beep/vince) is the companion project built in parallel — 1,200+ commits, seven days a week, fifteen hours a day. It started as an ElizaOS terminal build and became something larger: a live paper-trading intelligence engine with a recursive improvement loop, a feature store, a multi-agent swarm (Sentinel, Oracle, Eliza), a causal-uplift proof layer, and a Python ML training path that runs locally.
+**The machine should always be running.**
 
-The architecture now converging:
+[VINCE](VINCE.md) is the short-term layer of the stack — the "MONITOR THE SITUATION" terminal. It watches what the market is doing right now, in real time: OI, funding rates, L/S ratios from free-tier APIs; Hyperliquid tickers moving; Mando Minutes for macro news flow. VINCE is also where the thesis is born — the re-underwriting loop that asks *does what I'm seeing today still validate what SOUL.md says?* It is the birthplace of every trade before it becomes doctrine. *[More: [The Machine Was Always Running](https://ikigaistudio.substack.com/p/the-machine-was-always-running)]*
 
-| Layer | Repo | Role |
-|-------|------|------|
-| **Core CLI** | Dexter (this repo) | Thesis-driven research, real broker execution, options theta, quarterly attribution |
-| **Research backend** | [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) | 18 analyst agents, adversarial conviction challenge, parameter autoresearch (Sharpe metric) |
-| **Frontend terminal** | [VINCE](https://github.com/eliza420ai-beep/vince) | ElizaOS agent swarm, live paper bot, feature store, flywheel score, causal uplift proof |
+**Three-layer time-horizon stack:**
+
+| Layer | Repo | Time Horizon | Core Job |
+|-------|------|-------------|----------|
+| **Short-term** | [VINCE](VINCE.md) | Hours → weeks | Monitor the situation: OI, funding, L/S, Mando Minutes, Hyperliquid tickers, Solus on Hypersurface |
+| **Mid-term** | Dexter (this repo) | Months → years | Thesis establishment, portfolio construction, quarterly attribution, broker execution |
+| **Long-term** | [AI Hedge Fund](https://github.com/eliza420ai-beep/ai-hedge-fund) | Cycle-scale | 18 analyst agents, adversarial conviction challenge, Sharpe-metric autoresearch |
 
 All three share the same optimization mindset: define an evaluatable metric, run overnight experiments, commit only the winners.
 
-**Forge** is the next step for VINCE — the Karpathy-style autoresearch loop applied to VINCE’s own reasoning layer. Instead of tuning model weights, Forge mutates agent prompts, gate policies, swarm collaboration rules, and feature engineering logic. The evaluation harness is VINCE’s existing paper-bot replay engine. The metric: causal uplift × Sharpe × flywheel score — the same numbers the operator playbook already tracks. The ratchet: git commit winners, revert losers. You wake up to tighter gates, smarter swarm behavior, and a one-paragraph summary of what changed.
+**Forge** is VINCE's primary overnight autoresearcher — the Karpathy-style MLX AutoResearch loop applied to VINCE's own reasoning layer. Forge runs experiments on Apple Silicon, mutates policy thresholds / prompts / ML weights, evaluates against paper-bot replay, and commits only winners. Silent by default. Reporting via Telegram push to Claude Cowork. Metric: `causal_uplift x Sharpe x brier_calibration`. The ratchet: git commit winners, revert losers. You wake up to tighter gates, smarter policies, and a one-paragraph summary of what changed.
 
 Three repos. One thesis. Every metric that can be autoresearched, will be.
 
-→ **[Read the full VINCE build story](VINCE.md)** — what we built, why recursion + ML is the only durable edge, the 15-phase delivery arc, the operator playbook, and the proof system that only promotes when uplift, confidence, depth, and safety all agree.
+→ **[Read the full VINCE build story](VINCE.md)** — what we built, the agent architecture (Solus, Otaku, Forge, VINCE data agent), the three-layer time-horizon system, and the monitoring loop that keeps the thesis honest between quarterly reports.
+
 
 ---
 
