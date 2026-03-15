@@ -77,11 +77,11 @@ export async function callApi(
 ): Promise<ApiResponse> {
   const label = describeRequest(endpoint, params);
 
-  if (options?.cacheable) {
-    const cached = readCache(endpoint, params);
-    if (cached) {
-      return cached;
-    }
+  // Always read from cache — serves warmup data and prior queries for free.
+  // All successful responses are also written to cache automatically.
+  const cached = readCache(endpoint, params);
+  if (cached) {
+    return cached;
   }
 
   const FINANCIAL_DATASETS_API_KEY = process.env.FINANCIAL_DATASETS_API_KEY;
@@ -160,9 +160,8 @@ async function fetchWithRetry(
       throw new Error(`[Financial Datasets API] request failed: ${detail}`);
     });
 
-    if (options?.cacheable) {
-      writeCache(endpoint, params, data, url);
-    }
+    // Always cache successful responses so subsequent calls resolve from disk.
+    writeCache(endpoint, params, data, url);
 
     return { data, url };
   }
@@ -172,5 +171,102 @@ async function fetchWithRetry(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * POST variant of callApi for endpoints like /financials/search/line-items.
+ * Supports the same caching and retry semantics.
+ * Cache key is derived from the endpoint + JSON-stringified body.
+ */
+export async function callApiPost(
+  endpoint: string,
+  body: Record<string, unknown>,
+  options?: { cacheable?: boolean }
+): Promise<ApiResponse> {
+  const cacheParams: Record<string, string> = { _body: JSON.stringify(body, Object.keys(body).sort()) };
+  const label = describeRequest(endpoint, cacheParams);
+
+  const cached = readCache(endpoint, cacheParams);
+  if (cached) {
+    return cached;
+  }
+
+  const FINANCIAL_DATASETS_API_KEY = process.env.FINANCIAL_DATASETS_API_KEY;
+  if (!FINANCIAL_DATASETS_API_KEY) {
+    logger.warn(`[Financial Datasets API] POST call without key: ${label}`);
+  }
+
+  const url = `${BASE_URL}${endpoint}`;
+
+  await apiSemaphore.acquire();
+  try {
+    return await fetchPostWithRetry(url, body, FINANCIAL_DATASETS_API_KEY || '', label, endpoint, cacheParams, options);
+  } finally {
+    apiSemaphore.release();
+  }
+}
+
+async function fetchPostWithRetry(
+  url: string,
+  body: Record<string, unknown>,
+  apiKey: string,
+  label: string,
+  endpoint: string,
+  cacheParams: Record<string, string>,
+  options?: { cacheable?: boolean },
+): Promise<ApiResponse> {
+  for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'x-api-key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (attempt < MAX_RETRIES) {
+        const delay = INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        logger.warn(`[Financial Datasets API] POST network error (attempt ${attempt + 1}/${MAX_RETRIES + 1}): ${label} — retrying in ${delay}ms`);
+        await sleep(delay);
+        continue;
+      }
+      logger.error(`[Financial Datasets API] POST network error: ${label} — ${message}`);
+      throw new Error(`[Financial Datasets API] POST request failed for ${label}: ${message}`);
+    }
+
+    if (response.status === 429) {
+      if (attempt < MAX_RETRIES) {
+        const retryAfter = response.headers.get('retry-after');
+        const delay = retryAfter ? parseInt(retryAfter, 10) * 1000 : INITIAL_BACKOFF_MS * Math.pow(2, attempt);
+        logger.warn(`[Financial Datasets API] POST rate limited (attempt ${attempt + 1}/${MAX_RETRIES + 1}): ${label} — retrying in ${delay}ms`);
+        await sleep(delay);
+        continue;
+      }
+      logger.error(`[Financial Datasets API] POST rate limited after ${MAX_RETRIES + 1} attempts: ${label}`);
+      throw new Error(`[Financial Datasets API] POST request failed: 429 Too Many Requests`);
+    }
+
+    if (!response.ok) {
+      const detail = `${response.status} ${response.statusText}`;
+      logger.error(`[Financial Datasets API] POST error: ${label} — ${detail}`);
+      throw new Error(`[Financial Datasets API] POST request failed: ${detail}`);
+    }
+
+    const data = await response.json().catch(() => {
+      const detail = `invalid JSON (${response.status} ${response.statusText})`;
+      logger.error(`[Financial Datasets API] POST parse error: ${label} — ${detail}`);
+      throw new Error(`[Financial Datasets API] POST request failed: ${detail}`);
+    });
+
+    writeCache(endpoint, cacheParams, data, url);
+
+    return { data, url };
+  }
+
+  throw new Error(`[Financial Datasets API] POST exhausted retries for ${label}`);
 }
 

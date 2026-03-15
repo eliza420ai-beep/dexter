@@ -1,9 +1,16 @@
 /**
  * HTTP API server for Dexter - enables web frontends (e.g. Next.js chatbot) to connect.
  * Exposes POST /api/chat compatible with Vercel AI SDK useChat expectations.
+ * GET /api/scorecard serves the pre-computed ticker scorecard for leaderboards/UIs.
  */
 
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { runAgentForMessage } from './agent-runner.js';
+import { dexterPath } from '../utils/paths.js';
+
+const CORS_HEADERS = { 'Access-Control-Allow-Origin': '*' };
+const SCORECARD_STALE_DAYS = 7;
 
 const DEFAULT_PORT = 3847;
 
@@ -34,6 +41,32 @@ function getLatestUserMessage(messages: Array<{ role: string; content: string }>
     }
   }
   return '';
+}
+
+function isScorecardStale(generatedAt: string): boolean {
+  const generated = new Date(generatedAt).getTime();
+  const cutoff = Date.now() - SCORECARD_STALE_DAYS * 24 * 60 * 60 * 1000;
+  return generated < cutoff;
+}
+
+type ScorecardLoadResult =
+  | { ok: true; data: Record<string, unknown>; stale: boolean }
+  | { ok: false; code: 404 }
+  | { ok: false; code: 500; error: string };
+
+function loadScorecard(): ScorecardLoadResult {
+  const filepath = join(process.cwd(), dexterPath('scorecard.json'));
+  if (!existsSync(filepath)) return { ok: false, code: 404 };
+  try {
+    const raw = readFileSync(filepath, 'utf-8');
+    const data = JSON.parse(raw) as Record<string, unknown>;
+    const generatedAt = typeof data.generatedAt === 'string' ? data.generatedAt : '';
+    const stale = generatedAt ? isScorecardStale(generatedAt) : true;
+    return { ok: true, data: { ...data, stale }, stale };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return { ok: false, code: 500, error: msg };
+  }
 }
 
 /**
@@ -104,6 +137,72 @@ export async function startHttpServer(config: HttpServerConfig = {}): Promise<{ 
         };
         if (probeResults) body.probe = probeResults;
         return Response.json(body, { status: code });
+      }
+
+      if (
+        req.method === 'OPTIONS' &&
+        (url.pathname === '/api/scorecard' || url.pathname === '/api/scorecard/summary')
+      ) {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            ...CORS_HEADERS,
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+          },
+        });
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/scorecard') {
+        const loaded = loadScorecard();
+        if (!loaded.ok) {
+          if (loaded.code === 404) {
+            return Response.json(
+              { error: 'Scorecard not found. Run: bun run score' },
+              { status: 404, headers: CORS_HEADERS }
+            );
+          }
+          return Response.json(
+            { error: loaded.error },
+            { status: 500, headers: CORS_HEADERS }
+          );
+        }
+        return Response.json(loaded.data, {
+          headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+        });
+      }
+
+      if (req.method === 'GET' && url.pathname === '/api/scorecard/summary') {
+        const loaded = loadScorecard();
+        if (!loaded.ok) {
+          if (loaded.code === 404) {
+            return Response.json(
+              { error: 'Scorecard not found. Run: bun run score' },
+              { status: 404, headers: CORS_HEADERS }
+            );
+          }
+          return Response.json(
+            { error: loaded.error },
+            { status: 500, headers: CORS_HEADERS }
+          );
+        }
+        const tickers = (loaded.data.tickers as Array<Record<string, unknown>>) ?? [];
+        const summary = tickers.map((t, i) => ({
+          rank: i + 1,
+          symbol: t.symbol,
+          sleeve: t.sleeve,
+          composite: t.composite,
+          flags: t.flags ?? [],
+        }));
+        return Response.json(
+          {
+            generatedAt: loaded.data.generatedAt,
+            tickerCount: loaded.data.tickerCount,
+            stale: loaded.stale,
+            tickers: summary,
+          },
+          { headers: { 'Content-Type': 'application/json', ...CORS_HEADERS } }
+        );
       }
 
       if (req.method === 'OPTIONS' && url.pathname === '/api/chat') {

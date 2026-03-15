@@ -21,6 +21,7 @@ The meta-point: two metrics, two autoresearch loops, one thesis. The AI Hedge Fu
 ## Table of Contents
 
 - [What you get](#what-you-get)
+- [Ticker scoring system](#ticker-scoring-system)
 - [Customization](#customization)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
@@ -56,9 +57,81 @@ You get weekly rebalance checks (Mondays), quarterly benchmark reports, and opti
 
 The intended global architecture is **80% BTC core / 10% tastytrade sleeve / 10% Hyperliquid sleeve**. The two active sleeves are equally weighted diversification engines whose bar is to outperform **SPY**, **GLD**, and **BTC** over time.
 
+**Cache warmup and historical data.** `bun run warmup` pre-fetches and caches historical data from [Financial Datasets](https://financialdatasets.ai) for every equity ticker across all three portfolios. Daily and weekly prices (3 years), quarterly financial metrics, income statements, insider trades, institutional ownership (13F), batch line-item comparisons, and macro interest rates — all written to `.dexter/cache/`. Subsequent tool calls and skills resolve from disk with zero API calls. Idempotent: run it again and it skips everything already cached. Use `bun run warmup:prices` for a faster prices-only run, or `bun run warmup -- --years 5` for a wider history window. After warmup, run `bun run score` to build the **ticker scorecard** (see [Ticker scoring system](#ticker-scoring-system)).
+
+**New finance tools.** Five tools added to the `financial_search` router, accessible via natural language:
+
+| Tool | Endpoint | Use case |
+|------|----------|----------|
+| `get_institutional_ownership` | `/institutional-ownership/?ticker=` | Who owns this stock (13F filings) |
+| `get_investor_holdings` | `/institutional-ownership/?investor=` | What does a fund hold (Berkshire, Aschenbrenner, etc.) |
+| `get_interest_rates_snapshot` | `/macro/interest-rates/snapshot/` | Current central bank rates for regime context |
+| `get_interest_rates_historical` | `/macro/interest-rates/` | Historical rate cycles (cached) |
+| `search_line_items` | `/financials/search/line-items` (POST) | Batch-fetch specific line items across multiple tickers in one call |
+
+The batch `search_line_items` tool is the most powerful for portfolio work — a single call returns revenue, FCF, debt, capex, and R&D across all 25 watchlist tickers at once, replacing 25 individual API calls.
+
+**Portfolio scoring skill.** `src/skills/portfolio-scoring/SKILL.md` — interprets the **pre-computed scorecard** (from `bun run score`) through the lens of SOUL.md. Triggered by "score my portfolio", "portfolio analytics", "compare sleeves", or "risk flags". The skill does not compute returns or ratios; it reads `.dexter/scorecard.json` and `.dexter/scorecard.md`, overlays thesis context (conviction, regime), identifies high-scoring watchlist names to promote and low-scoring active names to flag, and produces hold/add/trim recommendations. Run `bun run warmup` then `bun run score` so the scorecard exists before asking Dexter to interpret it.
+
 **tastytrade:** Full theta engine — SOUL-aligned scan (thesis names, not index defaults), THETA-POLICY hard block, strategy preview, roll/repair, analytics. Dry-run before any live order; submit/cancel require explicit approval.
 
 The thesis is structural. The sizing is tactical. The discipline is the moat.
+
+---
+
+## Ticker scoring system
+
+Quantitative scoring for all 54 portfolio tickers is split into **script** (math) and **skill** (interpretation). The script reads only from cache — no API calls — and writes a scorecard; the skill reads the scorecard and SOUL.md and recommends actions.
+
+### Flow
+
+```
+.dexter/cache/     (prices, metrics, earnings, insiders)
+        │
+        ▼  bun run score
+src/scripts/score-tickers.ts   ← ranks metrics, 7 factors, composite 0–100
+        │
+        ▼  writes
+.dexter/scorecard.json   +   .dexter/scorecard.md
+        │
+        ▼  referenced by
+portfolio-scoring SKILL.md   ← Dexter overlays SOUL, suggests hold/add/trim
+```
+
+### Commands
+
+| Command | Purpose |
+|--------|---------|
+| `bun run warmup` | Pre-fetch and cache FD data for all portfolio tickers (prices, fundamentals, insider trades, etc.). Run first; idempotent. |
+| `bun run score` | Read cache, compute 7-factor scores and composite per ticker, write `.dexter/scorecard.json` and `.dexter/scorecard.md`. **Zero API calls** — uses only `.dexter/cache/`. |
+| Ask Dexter: *"score my portfolio"*, *"compare sleeves"*, *"which names to add or trim"* | Skill reads scorecard + SOUL.md, overlays conviction/regime, outputs recommendations. |
+
+If the scorecard is missing, Dexter will tell you to run `bun run score` (and to run `bun run warmup` first if the cache is cold).
+
+### Factor model (7 dimensions, composite 0–100)
+
+Each ticker is scored on seven factors. Metrics are ranked across all tickers and converted to percentiles; lower-is-better metrics (e.g. P/E, debt-to-equity) are inverted. Factor scores are averaged from component percentiles; the composite is a weighted sum.
+
+| Factor | Weight | Source | Metrics |
+|--------|--------|--------|---------|
+| **Growth** | 25% | financial-metrics, earnings | Revenue growth YoY, EPS growth, FCF growth, operating income growth |
+| **Valuation** | 20% | financial-metrics | P/E, EV/EBITDA, FCF yield, PEG (lower = better, inverted) |
+| **Momentum** | 15% | prices | 3m / 6m / 12m return, distance from ATH |
+| **Profitability** | 15% | financial-metrics | Gross, operating, net margin; ROE |
+| **Earnings quality** | 10% | earnings | Revenue/EPS BEAT/MISS, revenue/EPS change % |
+| **Balance sheet** | 10% | financial-metrics | Current ratio, debt-to-equity (inverted), interest coverage, FCF/share |
+| **Insider signal** | 5% | insider-trades | Net insider buy $ over trailing 6 months |
+
+### Outputs
+
+- **`.dexter/scorecard.json`** — Full data: per-ticker composite, per-factor scores and raw metrics, sector/industry, sleeve, risk flags.
+- **`.dexter/scorecard.md`** — Human-readable: ranked table (Rank | Ticker | Sleeve | Composite | factor columns | Flags), sleeve averages, top/bottom 10, risk-flag list.
+
+**Risk flags** (examples): `pe_above_50_low_growth`, `high_momentum`, `drawdown_40pct`, `insider_selling`.
+
+### Why script + skill
+
+LLMs are bad at computing Sharpe ratios, correlations, and drawdowns from hundreds of daily points. The **script** does all quantitative work once; the **skill** only interprets the result through SOUL.md (conviction, regime, sleeve roles) and recommends which names to hold, add, flag, or trim. No math in the skill — just thesis overlay on pre-computed numbers.
 
 ---
 
@@ -72,7 +145,7 @@ This fork extends [virattt/dexter](https://github.com/virattt/dexter) with a def
 | **SOUL.md** | Identity + thesis: AI infra supply chain (8 layers), conviction tiers, sizing rules. `80% BTC core / 10% tastytrade sleeve / 10% Hyperliquid sleeve`. “When the evidence conflicts with doctrine, I follow the evidence.” | Not a prompt — a worldview. The edge lives where standard tools can’t see (equipment, EDA, power, cybersecurity). SOUL constrains every query. |
 | **HEARTBEAT** | Weekly rebalance vs target. Quarterly report vs S&P, NASDAQ, BTC. Regime label. Newsletter draft when it matters. Dollar rebalancing when AUM set. | Passive monitoring isn't enough. Scheduled action: detect drift, deliver reports. |
 | **VOICE.md** | ikigaistudio tone and structure in every prompt. | Generic output sounds generic. Essays and letters need a recognizable voice. |
-| **Financial Datasets** | Primary source for prices, fundamentals, filings, insider trades, news. Optional Finnhub fallback for price/news when FD is down or rate-limited. | Built for agents: section-level filings, structured JSON. [DATA-API-FINANCIAL-DATASETS.md](docs/DATA-API-FINANCIAL-DATASETS.md). |
+| **Financial Datasets** | Primary source for prices, fundamentals, filings, insider trades, institutional ownership (13F), macro interest rates, batch line-item search, and news. Optional Finnhub fallback for price/news when FD is down or rate-limited. `bun run warmup` pre-caches historical data for all portfolio tickers. | Built for agents: section-level filings, structured JSON, POST batch endpoints. [DATA-API-FINANCIAL-DATASETS.md](docs/DATA-API-FINANCIAL-DATASETS.md). |
 | **tastytrade** | 6 shipped phases: accounts + positions + balances (Ph 1), option chain + quote (Ph 2), dry-run/submit/cancel (Ph 3, opt-in), portfolio sync with Target/Actual/Gap + heartbeat (Ph 4), SOUL-aligned theta engine — scan, preview, roll, repair (Ph 5), analytics — transactions, earnings calendar, watchlist, risk metrics scorecard (Ph 6). | Live broker data vs static PORTFOLIO.md. Theta scan defaults to SOUL thesis names — not SPX/SPY/QQQ. THETA-POLICY hard block + no-call list protects Core Compounders. Dry-run before any live order; submit/cancel require explicit approval. [PRD-TASTYTRADE-INTEGRATION.md](docs/PRD-TASTYTRADE-INTEGRATION.md), [PRD-TASTYTRADE-PHASE-5-THETA-ENGINE.md](docs/PRD-TASTYTRADE-PHASE-5-THETA-ENGINE.md). |
 | **Hyperliquid** | HIP-3 data, liquidity ranking, period returns, portfolio ops, live sync, order preview, opt-in execution with approval. **HL sleeve = onchain equities only** (TSM, NVDA, PLTR, COIN, HOOD, CRCL, etc.) — no BTC/SOL/HYPE/ETH/SUI/NEAR (those live in the core crypto portfolio). | Third portfolio: on-chain, 24/7, preview-first then execute when you say. [PRD-HYPERLIQUID-PORTFOLIO.md](docs/PRD-HYPERLIQUID-PORTFOLIO.md). |
 
@@ -121,18 +194,28 @@ bun start          # Interactive CLI
 bun dev            # Watch mode
 bun run typecheck  # Types only
 bun test           # Tests
-bun run heartbeat # Single heartbeat cycle (no gateway)
+bun run warmup           # Cache historical data for all portfolio tickers (prices + fundamentals + ownership)
+bun run warmup:prices    # Cache prices only (faster)
+bun run warmup -- --years 5  # 5-year history window (default: 3)
+bun run score            # Build ticker scorecard from cache (7 factors, composite 0–100) → .dexter/scorecard.json + .dexter/scorecard.md
+bun run heartbeat        # Single heartbeat cycle (no gateway)
 bun run heartbeat -- --dry-run   # Print query only
 bun run validate-portfolio       # Exit 1 if weights ≠ 100% or HL symbols invalid
 ```
 
 When the HTTP API is running, **GET /health** returns 200 when LLM and Financial Datasets are configured, 503 otherwise (response includes `checks` and `failed`). **GET /health?probe=true** runs a real FD reachability check.
 
+**GET /api/scorecard** returns the pre-computed ticker scorecard from `.dexter/scorecard.json` as JSON (CORS enabled). Use it from any frontend (e.g. stocks app, VINCE leaderboard). If the file is missing, the response is 404 with `{ "error": "Scorecard not found. Run: bun run score" }`. If the file exists but fails to parse, the response is 500 with an error message. The response includes a top-level **`stale`** boolean — `true` when the scorecard was generated more than 7 days ago, so UIs can prompt to re-run `bun run score`.
+
+**GET /api/scorecard/summary** returns a lighter payload: `generatedAt`, `tickerCount`, `stale`, and a ranked `tickers` array with `rank`, `symbol`, `sleeve`, `composite`, and `flags` only (no per-factor breakdowns). Useful for leaderboard tables.
+
 Quick validation:
 
 ```bash
-bun run typecheck && bun test && bun run heartbeat -- --dry-run && bun run validate-portfolio
+bun run typecheck && bun test && bun run heartbeat -- --dry-run && bun run validate-portfolio && bun run warmup:prices
 ```
+
+After a full warmup, build the scorecard: `bun run score`. Then ask Dexter *"score my portfolio"* or *"compare sleeves"* to get thesis-aware recommendations from the scorecard.
 
 Type a shortcut in the CLI to run a full query; see [ULTIMATE-TEST-QUERIES.md](docs/ULTIMATE-TEST-QUERIES.md) for the full library.
 
@@ -190,7 +273,8 @@ dexter/
 │   ├── cli.tsx      # Ink/React CLI
 │   ├── gateway/     # WhatsApp and channels
 │   ├── model/       # Multi-provider LLM
-│   ├── skills/      # SKILL.md workflows (e.g. DCF)
+│   ├── scripts/     # cache-warmup, score-tickers, tastytrade-login, hyperliquid-balance
+│   ├── skills/      # SKILL.md workflows (DCF, portfolio-scoring, portfolio-advisor, etc.)
 │   └── tools/       # finance, search, portfolio, tastytrade, hyperliquid, heartbeat
 ├── SOUL.md          # Thesis and coverage universe
 ├── docs/            # VOICE, HEARTBEAT.example, PRDs, data APIs

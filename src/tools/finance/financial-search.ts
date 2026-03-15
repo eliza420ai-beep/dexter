@@ -15,7 +15,9 @@ Intelligent meta-tool for financial data research. Takes a natural language quer
 
 ## When to Use
 
-- Company facts (sector, industry, market cap, number of employees, listing date, exchange, location, weighted average shares, website)
+- Company facts / profile (sector, industry, SIC code, exchange, CIK, location, SEC filings URL)
+- Earnings snapshots (latest revenue, EPS, BEAT/MISS/MEET vs estimates, QoQ/YoY changes)
+- Earnings press releases (full-text management commentary and forward guidance)
 - Company financials (income statements, balance sheets, cash flow statements)
 - Financial metrics (P/E ratio, market cap, EPS, dividend yield, enterprise value)
 - Analyst estimates and price targets
@@ -26,6 +28,9 @@ Intelligent meta-tool for financial data research. Takes a natural language quer
 - Cryptocurrency prices
 - Revenue segment breakdowns
 - Technical indicators: 200-day MA, 50-day MA, 200-week MA, distance from moving averages
+- Institutional ownership (13F filings) — who owns a stock, or what a fund holds
+- Macro interest rates — current and historical central bank rates
+- Cross-ticker batch comparisons of specific financial line items (revenue, FCF, debt, etc.)
 - Multi-company comparisons (pass the full query, it handles routing internally)
 
 ## When NOT to Use
@@ -57,10 +62,15 @@ import { getAnalystEstimates } from './estimates.js';
 import { getSegmentedRevenues } from './segments.js';
 import { getCryptoPriceSnapshot, getCryptoPrices, getCryptoTickers } from './crypto.js';
 import { getInsiderTrades } from './insider_trades.js';
+import { getInstitutionalOwnership, getInvestorHoldings } from './institutional-ownership.js';
+import { getInterestRatesSnapshot, getInterestRatesHistorical } from './interest-rates.js';
+import { searchLineItems } from './search-line-items.js';
 import { getStockPrice, getStockPrices, getStockTickers } from './stock-price.js';
 import { getHistoricalKeyRatios } from './key-ratios.js';
 import { getCompanyNews } from './news.js';
 import { getTechnicalIndicators } from './technical-indicators.js';
+import { getCompanyFacts } from './company-facts.js';
+import { getEarnings, getEarningsPressReleases } from './earnings.js';
 
 // All finance tools available for routing
 const FINANCE_TOOLS: StructuredToolInterface[] = [
@@ -82,11 +92,24 @@ const FINANCE_TOOLS: StructuredToolInterface[] = [
   getKeyRatios,
   getHistoricalKeyRatios,
   getAnalystEstimates,
+  // Company Profile
+  getCompanyFacts,
+  // Earnings
+  getEarnings,
+  getEarningsPressReleases,
   // News
   getCompanyNews,
   // Other Data
   getInsiderTrades,
   getSegmentedRevenues,
+  // Institutional Ownership
+  getInstitutionalOwnership,
+  getInvestorHoldings,
+  // Macro
+  getInterestRatesSnapshot,
+  getInterestRatesHistorical,
+  // Batch Comparisons
+  searchLineItems,
 ];
 
 // Create a map for quick tool lookup by name
@@ -137,6 +160,13 @@ Given a user's natural language query about financial data, call the appropriate
    - For comprehensive analysis → get_all_financial_statements
    - For moving averages, 200-day MA, 50-day MA, 200-week MA, technical support levels, "near its MA", "below 200W" → get_technical_indicators
    - For multi-ticker MA comparisons (e.g. "check 200-day MA for AAPL, MSFT, GOOGL") → call get_technical_indicators once per ticker
+   - For institutional ownership / 13F data / "who owns X" → get_institutional_ownership
+   - For fund holdings / "what does Berkshire hold" → get_investor_holdings
+   - For interest rates / Fed rate / macro rates → get_interest_rates_snapshot (current) or get_interest_rates_historical (over time, requires bank param e.g. 'FED', 'ECB', 'BOJ')
+   - For cross-ticker comparisons of specific line items (e.g. "compare revenue and FCF for NVDA, AMAT, KLAC") → search_line_items (single batch call, much more efficient)
+   - For company profile, sector, industry, SIC code, exchange, CIK → get_company_facts
+   - For most recent earnings results, EPS surprise, revenue beat/miss → get_earnings
+   - For full-text earnings press releases, management commentary, forward guidance → get_earnings_press_releases
 
 4. **Efficiency**:
    - Prefer specific tools over general ones when possible
