@@ -2,10 +2,12 @@
  * HTTP API server for Dexter - enables web frontends (e.g. Next.js chatbot) to connect.
  * Exposes POST /api/chat compatible with Vercel AI SDK useChat expectations.
  * GET /api/scorecard serves the pre-computed ticker scorecard for leaderboards/UIs.
+ * GET /api/capabilities — stable JSON catalog for automation and agent discovery.
  */
 
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import packageJson from '../../package.json';
 import { runAgentForMessage } from './agent-runner.js';
 import { dexterPath } from '../utils/paths.js';
 
@@ -13,6 +15,66 @@ const CORS_HEADERS = { 'Access-Control-Allow-Origin': '*' };
 const SCORECARD_STALE_DAYS = 7;
 
 const DEFAULT_PORT = 3847;
+
+/** Machine-readable API catalog (for agents, scripts, codegen). */
+export function getHttpCapabilities(): Record<string, unknown> {
+  return {
+    service: 'dexter',
+    version: packageJson.version,
+    description:
+      'HTTP surface for chat (LLM loop), health checks, and pre-computed scorecard JSON. CLI remains the primary interactive entry.',
+    defaultPort: DEFAULT_PORT,
+    env: {
+      port: 'DEXTER_HTTP_PORT',
+      host: 'DEXTER_HTTP_HOST',
+    },
+    endpoints: [
+      {
+        method: 'GET',
+        path: '/api/capabilities',
+        aliases: ['/api'],
+        description: 'This document. Same JSON from GET /api and GET /api/capabilities.',
+      },
+      {
+        method: 'GET',
+        path: '/health',
+        aliases: ['/api/health'],
+        description:
+          'Liveness and configuration checks. 200 if LLM + Financial Datasets keys present; 503 degraded otherwise. ?probe=true hits FD API.',
+      },
+      {
+        method: 'GET',
+        path: '/api/scorecard',
+        description: 'Full scorecard from ~/.dexter/scorecard.json (after `bun run score`). CORS enabled.',
+        errors: { '404': 'Run `bun run score` (and `bun run warmup` if cache cold).' },
+      },
+      {
+        method: 'GET',
+        path: '/api/scorecard/summary',
+        description: 'Ranked tickers only: symbol, sleeve, composite, flags; plus generatedAt, stale.',
+      },
+      {
+        method: 'POST',
+        path: '/api/chat',
+        description: 'Run one agent turn from the latest user message in the messages array.',
+        requestBody: {
+          messages: "Array<{ role: 'user' | 'assistant' | 'system'; content: string }>",
+          sessionId: 'optional string; default web-default',
+          model: 'optional string; default gpt-5.4',
+          modelProvider: 'optional string; default openai',
+        },
+        response: { text: 'string', sessionId: 'string' },
+      },
+    ],
+    localArtifacts: [
+      {
+        path: '~/.dexter/scorecard.json',
+        producedBy: 'bun run score',
+        note: 'Interpretation via portfolio-scoring skill in interactive CLI, not via HTTP.',
+      },
+    ],
+  };
+}
 
 export type HttpServerConfig = {
   port?: number;
@@ -83,6 +145,29 @@ export async function startHttpServer(config: HttpServerConfig = {}): Promise<{ 
     hostname: host,
     async fetch(req) {
       const url = new URL(req.url);
+
+      if (
+        req.method === 'OPTIONS' &&
+        (url.pathname === '/api' || url.pathname === '/api/capabilities')
+      ) {
+        return new Response(null, {
+          status: 204,
+          headers: {
+            ...CORS_HEADERS,
+            'Access-Control-Allow-Methods': 'GET, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type',
+          },
+        });
+      }
+
+      if (
+        req.method === 'GET' &&
+        (url.pathname === '/api' || url.pathname === '/api/capabilities')
+      ) {
+        return Response.json(getHttpCapabilities(), {
+          headers: { 'Content-Type': 'application/json', ...CORS_HEADERS },
+        });
+      }
 
       if (req.method === 'GET' && (url.pathname === '/health' || url.pathname === '/api/health')) {
         const probe = url.searchParams.get('probe') === 'true';

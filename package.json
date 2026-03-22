@@ -1,7 +1,14 @@
 {
   "name": "dexter-ts",
   "version": "2026.3.8",
-  "description": "Dextr - AI agent for deep financial research.",
+  "description": "Dexter — AI agent for deep financial research (CLI-first, optional HTTP API).",
+  "keywords": [
+    "cli",
+    "financial-research",
+    "agent",
+    "llm",
+    "bun"
+  ],
   "type": "module",
   "main": "src/index.tsx",
   "bin": {

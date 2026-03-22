@@ -203,6 +203,8 @@ bun run heartbeat -- --dry-run   # Print query only
 bun run validate-portfolio       # Exit 1 if weights ≠ 100% or HL symbols invalid
 ```
 
+**Start the HTTP API:** `bun run api` (default `http://0.0.0.0:3847`; override with `DEXTER_HTTP_PORT` / `DEXTER_HTTP_HOST`). **GET /api** and **GET /api/capabilities** return the same JSON catalog of routes and contracts—useful for automation and agent-side discovery without scraping docs.
+
 When the HTTP API is running, **GET /health** returns 200 when LLM and Financial Datasets are configured, 503 otherwise (response includes `checks` and `failed`). **GET /health?probe=true** runs a real FD reachability check.
 
 **GET /api/scorecard** returns the pre-computed ticker scorecard from `.dexter/scorecard.json` as JSON (CORS enabled). Use it from any frontend (e.g. stocks app, VINCE leaderboard). If the file is missing, the response is 404 with `{ "error": "Scorecard not found. Run: bun run score" }`. If the file exists but fails to parse, the response is 500 with an error message. The response includes a top-level **`stale`** boolean — `true` when the scorecard was generated more than 7 days ago, so UIs can prompt to re-run `bun run score`.
